@@ -63,28 +63,71 @@ function zeroPad(num, max) {
 }
 
 /**
+ * Generates a string name based on the given index with or without leading zero, count, name, separatorIndex and optional path.
+ *
+ * @param {number} index – The index of the sequence.
+ * @param {number} count – The total count of the sequence.
+ * @param {string} name – The name of the string.
+ * @param {string} [separatorIndex='. '] - The separator index used between the index and the name.
+ * @param {string|null} [path=null] – The optional path to the sequence.
+ * @return {object} An object containing the generated name and full path of the sequence.
+ */
+function getSequenceName(index, count, name, separatorIndex = ". ", path = null) {
+	const sanitizedName = sanitize(name); //, { replacement: (s) => "? ".indexOf(s) > -1 ? "" : "-", }).trim();
+
+	const indexName = `${index}${separatorIndex}${sanitizedName}`;
+	const indexPath = path ? `${path}/${indexName}` : indexName;
+
+	const sequence = zeroPad(index, count);
+	const sequenceName = `${sequence}${separatorIndex}${sanitizedName}`;
+	const sequencePath = path ? `${path}/${sequenceName}` : sequenceName;
+
+	if (indexPath === sequencePath) {
+		return {name: indexName, fullPath: indexPath};
+	} else {
+        if (Settings.download().seqZeroLeft) {
+            // if it exists then rename it with leading zero
+			if (fs.existsSync(indexPath)) {
+				fs.renameSync(indexPath, sequencePath);
+			}
+
+			return {name: sequenceName, fullPath: sequencePath};
+        } else {
+            // if it exists then rename it without leading zero
+			if (fs.existsSync(sequencePath)) {
+				fs.renameSync(sequencePath, indexPath);
+			}
+
+			return {name: indexName, fullPath: indexPath};
+		}
+	}
+}
+
+/**
  * Calculates the download speed given the input speed in kilobytes per second.
  *
- * @param {number} speedInKB - The download speed in kilobytes per second.
+ * @param {number} bytes - The download speed in kilobytes per second.
  * @return {Object} The download speed value and unit.
  */
-function getDownloadSpeed(speedInKB) {
+function getDownloadSpeed(bytes) {
 	const BYTES_PER_KB = 1024;
 	const UNITS = ["B/s", "KB/s", "MB/s", "GB/s"];
 
-	let bytes = parseInt(speedInKB) || 0;
-	let unitIndex = 0;
+	let speed = Math.floor(bytes);
+    let unitIndex = 0;
 
-    if (bytes >= BYTES_PER_KB) {
-        if (bytes >= BYTES_PER_KB ** 3) unitIndex = 3;  //Gb
-        else if (bytes >= BYTES_PER_KB ** 2) unitIndex = 2; //Mb
-        else unitIndex = 1; //kb
-        
-		bytes /=  BYTES_PER_KB ** (unitIndex);
-	}
+    if (speed >= BYTES_PER_KB) {
+        unitIndex = speed >= BYTES_PER_KB ** 3 ? 3 : speed >= BYTES_PER_KB ** 2 ? 2 : 1;
+        speed /= BYTES_PER_KB ** unitIndex;
+    }
 
 	return {
-		value: parseFloat(bytes.toFixed(2)),
+		value: Number(speed.toFixed(2)),
 		unit: UNITS[unitIndex],
 	};
+}
+
+function paginate(array, page_size, page_number) {
+	// human-readable page numbers usually start with 1, so we reduce 1 in the first argument
+	return array.slice((page_number - 1) * page_size, page_number * page_size);
 }

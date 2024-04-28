@@ -169,6 +169,7 @@ $(".ui.dashboard .content").on("click", ".download.button, .download-error", fun
 $(".ui.dashboard .content").on("click", "#clear_logger", function (e) {
 	clearLogArea();
 });
+
 $(".ui.dashboard .content").on("click", "#save_logger", function (e) {
 	saveLogFile();
 });
@@ -882,7 +883,7 @@ function initDownload($course, coursedata, subTitle = "") {
 						case 1:
 						case -1:
 							var stats = dl.getStats();
-							var download_speed_and_unit = getDownloadSpeed(parseInt(stats.present.speed / 1000) || 0);
+							var download_speed_and_unit = getDownloadSpeed(stats.present.speed||0);
 							$download_speed_value.html(download_speed_and_unit.value);
 							$download_speed_unit.html(download_speed_and_unit.unit);
 							$progressElemIndividual.progress("set percent", stats.total.completed);
@@ -1311,8 +1312,9 @@ function initDownload($course, coursedata, subTitle = "") {
 								var response = await getFile(a, true);
 								var endTime = performance.now();
 								var timeDiff = (endTime - startTime) / 1000.0;
+                                var chunkSize = Math.floor(response.byteLength / 1024) || 1;
 
-								var download_speed_and_unit = getDownloadSpeed(parseInt(response.byteLength / 1024 / timeDiff) || 0);
+								var download_speed_and_unit = getDownloadSpeed(chunkSize / timeDiff);
 								$download_speed_value.html(download_speed_and_unit.value);
 								$download_speed_unit.html(download_speed_and_unit.unit);
 								result[count] = response;
@@ -2072,40 +2074,6 @@ function sendNotification(pathCourse, course_name, urlImage = null) {
 	notification.onclick = function () {
 		shell.openPath(pathCourse);
 	};
-}
-
-function getSequenceName(index, count, name, separatorIndex = ". ", path = null) {
-	const sanitize_name = sanitize(name); //, { replacement: (s) => "? ".indexOf(s) > -1 ? "" : "-", }).trim();
-
-	const index_name = `${index}${separatorIndex}${sanitize_name}`;
-	const index_path = path ? `${path}/${index_name}` : index_name;
-
-	const seq = zeroPad(index, count);
-	const sequence_name = `${seq}${separatorIndex}${sanitize_name}`;
-	const sequence_path = path ? `${path}/${sequence_name}` : sequence_name;
-
-	if (index_path === sequence_path) {
-		return {name: index_name, fullPath: index_path};
-	} else {
-		if (Settings.download().seqZeroLeft) {
-			if (fs.existsSync(index_path)) {
-				fs.renameSync(index_path, sequence_path);
-			}
-
-			return {name: sequence_name, fullPath: sequence_path};
-		} else {
-			if (fs.existsSync(sequence_path)) {
-				fs.renameSync(sequence_path, index_path);
-			}
-
-			return {name: index_name, fullPath: index_path};
-		}
-	}
-}
-
-function paginate(array, page_size, page_number) {
-	// human-readable page numbers usually start with 1, so we reduce 1 in the first argument
-	return array.slice((page_number - 1) * page_size, page_number * page_size);
 }
 
 function saveLogFile() {

@@ -8,8 +8,9 @@
   * download speed information
   
 ### Updates
-	* GitHub Issues Templates
+  * GitHub Issues Templates
   * Version Packages
+  * Clean Code
   
 
 ----
