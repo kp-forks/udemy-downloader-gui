@@ -6,7 +6,7 @@ const axios = require("axios");
 const fs = require("fs");
 
 const prompt = require("dialogs")({});
-const mkdirp = require("mkdirp");
+// const mkdirp = require("mkdirp");
 
 const sanitize = require("sanitize-filename");
 const vtt2srt = require("node-vtt-to-srt");
@@ -809,7 +809,10 @@ function initDownload($course, coursedata, subTitle = "") {
 				download_directory + "/" + course_name
 			);
 
-			mkdirp(seqName.fullPath).then(() => downloadLecture(chapterindex, lectureindex, num_lectures, seqName.name));
+			// mkdirp(seqName.fullPath).then(() => downloadLecture(chapterindex, lectureindex, num_lectures, seqName.name));
+
+            fs.mkdirSync(seqName.fullPath, { recursive: true });
+            downloadLecture(chapterindex, lectureindex, num_lectures, seqName.name);
 		} catch (err) {
 			appendLog("downloadChapter_Error:", err.message);
 			//captureException(err);

@@ -1,7 +1,7 @@
 {
   "name": "udeler",
   "productName": "Udeler",
-  "version": "1.12.8",
+  "version": "1.12.9",
   "description": "A cross platform (Windows, Mac, Linux) desktop application for downloading Udemy Courses.",
   "main": "main.js",
   "vars": {
@@ -36,7 +36,6 @@
     "dialogs": "^2.0.1",
     "electron-settings": "3.2.0",
     "jquery": "^3.7.1",
-    "mkdirp": "^3.0.1",
     "mt-files-downloader": "github:FaisalUmair/mt-files-downloader-wrapper",
     "node-vtt-to-srt": "^1.0.1",
     "sanitize-filename": "^1.6.3"
