@@ -3,21 +3,21 @@ on:
   push:
     tags: ["*"]
 
-jobs:   
+jobs:
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
-    
+
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: create env file
         run: |
@@ -25,7 +25,7 @@ jobs:
           echo SENTRY_DSN=${{ secrets.SENTRY_DSN }} >> .env
 
       - name: Cache node_modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json')}}
@@ -52,15 +52,15 @@ jobs:
         run: npm install dmg-license
 
       - name: Build Electron App
-        uses: coparse-inc/action-electron-builder@v1.0.0
+        uses: heliomarpm/action-electron-builder@2.1
         with:
           max_attempts: 3
           github_token: ${{ secrets.github_token }}
           release: true
-      
+
       - name: Build Electron App Win32
         if: startsWith(matrix.os, 'windows-latest')
-        uses: coparse-inc/action-electron-builder@v1.0.0
+        uses: heliomarpm/action-electron-builder@2.1
         with:
           args: --ia32
           max_attempts: 3
