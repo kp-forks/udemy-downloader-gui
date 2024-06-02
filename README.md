@@ -126,7 +126,7 @@ npm run make:release
 
 Please make sure to read the [Contributing Guide](https://github.com/heliomarpm/udemy-downloader-gui/blob/master/docs/CONTRIBUTING.md) before making a pull request.
 
-Thank you to all the people who already contributed to Udeler!
+Thank you to all the people who already contributed to Udeler ❤️!
 
 <a href="https://github.com/heliomarpm/udemy-downloader-gui/graphs/contributors" target="_blank">
   <img src="https://contrib.rocks/image?repo=heliomarpm/udemy-downloader-gui" />
