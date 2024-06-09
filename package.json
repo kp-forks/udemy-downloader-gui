@@ -1,9 +1,10 @@
 {
   "name": "udeler",
   "productName": "Udeler",
-  "version": "1.12.9",
+  "version": "1.12.12",
   "description": "A cross platform (Windows, Mac, Linux) desktop application for downloading Udemy Courses.",
   "main": "main.js",
+  "type": "commonjs",
   "vars": {
     "urlHelp": "https://heliomarpm.notion.site/heliomarpm/How-to-get-an-Access-Token-b0ce5f89073c4965b47721197dcb2497",
     "urlToggles": "https://raw.githubusercontent.com/heliomarpm/feature_toggles/main/udemy-downloader-gui.json",
@@ -25,13 +26,13 @@
     "postinstall": "electron-builder install-app-deps",
     "build": "electron-builder",
     "build:w32": "electron-builder -w \"--ia32\"",
-    "make:release": "node ./cmd/modules/release/index.js",
+    "deploy": "node ./cmd/modules/release/index.js",
     "prebuild:local": "node ./cmd/prebuild.js",
     "build:local": "npm run build && npm run build:w32"
   },
   "dependencies": {
-    "@sentry/electron": "^4.24.0",
-    "axios": "^1.6.8",
+    "@sentry/electron": "^5.0.0",
+    "axios": "^1.7.2",
     "cookie": "^0.6.0",
     "dialogs": "^2.0.1",
     "electron-settings": "3.2.0",
@@ -44,8 +45,8 @@
     "electron": "11.5.0",
     "electron-builder": "^24.13.3",
     "electron-reload": "^2.0.0-alpha.1",
-    "open": "^8.4.2",
-    "semver": "^7.6.0"
+    "open": "8.4.2",
+    "semver": "^7.6.2"
   },
   "build": {
     "appId": "com.faisalumair.udeler",
