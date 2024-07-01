@@ -45,7 +45,6 @@ async function makeRelease(commitAndPush = true) {
                 { inherit: true }
             )
 
-            console.log(`\n${COLORS.GREEN}Done!${COLORS.RESET}\n`)
         } else {
             console.log(`\n${COLORS.BLUE}Commit and push skipped!${COLORS.RESET}\n`);
         }
@@ -53,16 +52,10 @@ async function makeRelease(commitAndPush = true) {
         const [repository] = exec([`git remote get-url --push origin`])
         const ownerAndRepo = extractOwnerAndRepoFromGitRemoteURL(repository)
 
-        console.log(
-            `${COLORS.CYAN}> Opening the repository releases page...${COLORS.RESET}`
-        )
-
+        console.log(`${COLORS.CYAN}> Opening the repository releases page...${COLORS.RESET}`)
         await open(`https://github.com/${ownerAndRepo}/releases`)
 
-        console.log(
-            `${COLORS.CYAN}> Opening the repository actions page...${COLORS.RESET}`
-        )
-
+        console.log(`${COLORS.CYAN}> Opening the repository actions page...${COLORS.RESET}`)
         await open(`https://github.com/${ownerAndRepo}/actions`)
 
         console.log(`\n${COLORS.GREEN}Done!${COLORS.RESET}\n`)
