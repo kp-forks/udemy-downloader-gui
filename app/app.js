@@ -204,7 +204,7 @@ function htmlCourseCard(course, downloadSection = false) {
 
     const history = getDownloadHistory(course.id);
     if (history) {
-        course.infoDownloaded = translate(history.completed ? "Download completed on" : "Download started since") + " " + history.date;
+        course.infoDownloaded = translate(history.completed ? "Download finished on" : "Download started since") + " " + history.date;
         course.completed = history.completed ? true : course.completed;
         course.encryptedVideos = history.encryptedVideos ?? 0;
         course.selectedSubtitle = history.selectedSubtitle ?? "";
@@ -243,7 +243,7 @@ function htmlCourseCard(course, downloadSection = false) {
           <i class="check icon"></i>
           <div class="content">
             <div class="headers">
-              <h4>${translate("Download Completed")}</h4>
+              <h4>${translate("Download Finished")}</h4>
             </div>
             <p>${translate("Click to dismiss")}</p>
           </div>
