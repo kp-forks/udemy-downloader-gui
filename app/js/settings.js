@@ -1,117 +1,171 @@
 
-const Settings = {};
+const Settings = (() => {
+    "use strict"
 
-(() => {
-  "use strict"
+    const settings = require("electron-settings");
+    const path = require("path");
+    const { homedir } = require("os");
 
-  const settings = require("electron-settings");
-  const { join } = require("path");
-  const { homedir } = require("os");
+    const DownloadType = Object.freeze({
+        Both: 0,
+        OnlyLectures: 1,
+        OnlyAttachments: 2
+    });
 
-  const downloadType = {
-    LecturesAndAttachments: 0,
-    OnlyLectures: 1,
-    OnlyAttachments: 2
-  }
-  const downloadDefaultOptions = {
-    checkNewVersion: true,
-    autoStartDownload: false,
-    continueDonwloadingEncrypted: false,
-    enableDownloadStartEnd: false,
-    downFiles: downloadType.LecturesAndAttachments,
-    skipSubtitles: false,
-    autoRetry: false,
-    downloadStart: false,
-    downloadEnd: false,
-    videoQuality: "Auto",
-    path: join(homedir(), "Downloads", "Udeler"),
-    defaultSubtitle: "",
-    seqZeroLeft: false,
-  }
+    const DownloadDefaultOptions = Object.freeze({
+        checkNewVersion: true,
+        autoStartDownload: false,
+        continueDonwloadingEncrypted: false,
+        enableDownloadStartEnd: false,
+        type: DownloadType.Both,
+        skipSubtitles: false,
+        autoRetry: false,
+        downloadStart: 0,
+        downloadEnd: 0,
+        videoQuality: "Auto",
+        path: path.join(homedir(), "Downloads", "Udeler"),
+        defaultSubtitle: undefined,
+        seqZeroLeft: false,
+    });
 
-  /**
-   * Ensures all keys are set
-   * @interna
-   */
-  function ensureDefaultKeys() {
-    if (!settings.get("general")) {
-      settings.set("general", {
-        language: getLanguage()
-      });
+    let _language = null;
+    let _prettify = false;
+
+    /**
+     * Ensures all default keys are set in the settings
+     * @internal
+     * @returns {void}
+     */
+    function ensureDefaultKeys() {
+        if (!settings.get("language")) {
+            settings.set("language", getLanguage());
+        }
+
+        if (!settings.get("download")) {
+            settings.set("download", DownloadDefaultOptions);
+        } else {
+            // certifica que exista todas as propriedades
+            Object.keys(DownloadDefaultOptions).forEach(key => {
+                settings.get(`download.${key}`, DownloadDefaultOptions[key]);
+            });
+        }
     }
 
-    if (!settings.get("download")) {
-      settings.set("download", downloadDefaultOptions);
-    } else {
-      console.log("garante que todas as chaves estejam definidas");
-      // certifica que exista todas as propriedades
-      Object.keys(downloadDefaultOptions).forEach(key => {
-        settings.get(`download.${key}`, downloadDefaultOptions[key]);
-      });
-    }
-  }
+    /**
+     * Get navigator default language and set in settings "language"
+     *
+     * @returns defined language
+     */
+    function getLanguage() {
+        try {
+            let language = settings.get("language");
 
-  /**
-   * Get navigator default language and set in settings "general.language"
-   *
-   * @returns defined language
-   */
-  function getLanguage() {
+            if (!language) {
+                const navigatorLang = navigator.language.substring(0, 2);
+                const meta = require("../locale/meta.json");
 
-    try {
-      let language = settings.get("general.language");
+                language = Object.keys(meta).find(key => meta[key] === (navigatorLang === 'pt' ? 'pt_BR.json' : `${navigatorLang}.json`));
 
-      if (!language) {
-        let loc = navigator.language.substring(0, 2);
-        loc = loc === 'pt' ? 'pt_BR.json' : `${loc}.json`;
+                if (language) {
+                    settings.set("language", language, { prettify: _prettify });
+                }
+            }
 
-        const meta = require("../locale/meta.json");
+            return language || "English";
 
-        Object.keys(meta).forEach(key => {
-          if (meta[key] === loc) {
-            language = key;
-            settings.set("general.language", key);
-            console.log("general.language", key);
-            return key;
-          }
-        });
-      }
-
-      return language;
-
-    } catch (error) {
-      console.error("Error_Settings getLanguage(): " + error);
+        } catch (error) {
+            console.error("Error_Settings getLanguage(): " + error);
+            return "English";
+        }
     }
 
-  };
+    /**
+     * Get the download directory for a given course
+     * @param {string} courseName - The name of the course
+     * @returns {string} - The download directory path
+     */
+    function downloadDirectory(courseName = "") {
+        const download_dir = settings.get("download.path") || DownloadDefaultOptions.path;
+        return path.join(download_dir, courseName);
+    }
 
-  function downloadDirectory(courseName = "") {
-    const download_dir = settings.get("download.path") || downloadDefaultOptions.path;
-    return join(download_dir, courseName);
-  }
+    // Initialize settings
+    (function init() {
+        console.log('Initialize settings');
+        _prettify = process.env.PRETTIFY_SETTINGS || false;
+        ensureDefaultKeys();
+    })();
 
-  const init = () => {
-    console.log('Initialize settings');
-    ensureDefaultKeys();
-  };
-
-  init();
-
-  Settings.get = (keyPath, defaultValue = undefined) => settings.get(keyPath, defaultValue);
-  Settings.set = (keyPath, value) => settings.set(keyPath, value);
-
-  Settings.language = getLanguage() || "English";
-  Settings.subDomain = (value) => (value !== undefined ? settings.set("subdomain", value) : settings.get("subdomain", "www")) ?? value;
-  Settings.accessToken = (value) => (value !== undefined ? settings.set("access_token", value) : settings.get("access_token")) ?? value;
-  Settings.subscriber = (value) => (value !== undefined ? settings.set("subscriber", value) : settings.get("subscriber")) ?? value;
-
-  Settings.downloadType = downloadType;
-  Settings.general = (value) => (value !== undefined ? settings.set("general", value) : settings.get("general")) ?? value;
-  Settings.download = (value) => (value !== undefined ? settings.set("download", value) : settings.get("download")) ?? value;
-  Settings.downloadHistory = (value) => (value !== undefined ? settings.set("downloadedHistory", value) : settings.get("downloadedHistory")) ?? value;
-  Settings.downloadedCourses = (value) => (value !== undefined ? settings.set("downloadedCourses", value) : settings.get("downloadedCourses")) ?? value;
-
-  Settings.downloadDirectory = (courseName) => downloadDirectory(courseName || "");
+    return {
+        DownloadType,
+        DownloadDefaultOptions,
+        /** @param {String, Object} */
+        get: (keyPath, defaultValue = undefined) => settings.get(keyPath, defaultValue),
+        /** @param {String, Object} */
+        set: (keyPath, value) => settings.set(keyPath, value, { prettify: _prettify }),
+        /** @type {string} */
+        get language() {
+            if (!_language) {
+                _language = getLanguage();
+            }
+            return _language;
+        },
+        /** @type {string} */
+        set language(value) {
+            this.set("language", value || null);
+            _language = value;
+        },
+        /** @type {string} */
+        get subDomain() {
+            return this.get("subdomain", "www");
+        },
+        /** @type {string} */
+        set subDomain(value) {
+            this.set("subdomain", value);
+        },
+        /** @type {string} */
+        get accessToken() {
+            return this.get("access_token");
+        },
+        /** @type {string} */
+        set accessToken(value) {
+            this.set("access_token", value || null);
+        },
+        /** @type {boolean} */
+        get subscriber() {
+            return Boolean(this.get("subscriber"));
+        },
+        /** @type {boolean} */
+        set subscriber(value) {
+            this.set("subscriber", value);
+        },
+        /** @type {Object} */
+        get download() {
+            return this.get("download");
+        },
+        /** @type {Object} */
+        set download(value) {
+            this.set("download", value);
+        },
+        /** @type {Object} */
+        get downloadHistory() {
+            return this.get("downloadedHistory");
+        },
+        /** @type {Object} */
+        set downloadHistory(value) {
+            this.set("downloadedHistory", value);
+        },
+        /** @type {Object} */
+        get downloadedCourses() {
+            return this.get("downloadedCourses");
+        },
+        /** @type {Object} */
+        set downloadedCourses(value) {
+            this.set("downloadedCourses", value);
+        },
+        /** @param {String} */
+        downloadDirectory: (courseName) => downloadDirectory(courseName),
+    };
 })();
 
 module.exports = Settings;
