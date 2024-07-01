@@ -12,6 +12,7 @@ const vtt2srt = require("node-vtt-to-srt");
 const Downloader = require("mt-files-downloader");
 const https = require("https");
 const cookie = require("cookie");
+const utils = require("./js/utils");
 
 const pageSize = 25;
 const msgDRMProtected = translate("Contains DRM protection and cannot be downloaded");
@@ -380,7 +381,7 @@ function checkLogin() {
         }).then((response) => {
             const resp = response.data;
 
-            const subscriber = toBoolean(resp.header.user.enableLabsInPersonalPlan);
+            const subscriber = utils.toBoolean(resp.header.user.enableLabsInPersonalPlan);
             Settings.subscriber(subscriber);
             url = !subscriber
                 ? `https://${Settings.subDomain()}.udemy.com/api-2.0/users/me/subscribed-courses?page_size=${pageSize}&page_size=30&ordering=-last_accessed`
@@ -416,6 +417,7 @@ function checkLogin() {
             resetToLogin();
         }).finally(() => {
             console.log("login finish");
+            console.log("access-token", Settings.accessToken());
         });
     }
 }
@@ -1101,10 +1103,10 @@ function initDownload($course, courseData, subTitle = "") {
     function downloadChapter(chapterIndex, lectureIndex) {
         try {
             const num_lectures = courseData["chapters"][chapterIndex]["lectures"].length;
-            const seqName = getSequenceName(
+            const seqName = utils.getSequenceName(
                 chapterIndex + 1,
                 courseData["chapters"].length,
-                courseData["chapters"][chapterIndex]["name"].trim(),
+                sanitize(courseData["chapters"][chapterIndex]["name"].trim()),
                 ". ",
                 downloadDirectory + "/" + courseName
             );
@@ -1122,7 +1124,7 @@ function initDownload($course, courseData, subTitle = "") {
         }
     }
 
-    function downloadLecture(chapterIndex, lectureIndex, num_lectures, chapter_name) {
+    function downloadLecture(chapterIndex, lectureIndex, totallectures, chapterName) {
         try {
             if (downloaded == toDownload) {
                 resetCourse($course, $course.find(".download-success"));
@@ -1132,13 +1134,14 @@ function initDownload($course, courseData, subTitle = "") {
                     $course.find(".ui.tiny.image").find(".course-image").attr("src")
                 );
                 return;
-            } else if (lectureIndex == num_lectures) {
+            } else if (lectureIndex == totallectures) {
                 downloadChapter(++chapterIndex, 0);
                 return;
             }
 
             const lectureType = courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["type"].toLowerCase();
             const lectureName = courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["name"].trim();
+            const sanitizedLectureName = sanitize(lectureName);
 
             function dlStart(dl, typeVideo, callback) {
                 // Change retry options to something more forgiving and threads to keep udemy from getting upset
@@ -1186,7 +1189,7 @@ function initDownload($course, courseData, subTitle = "") {
                         case 1:
                         case -1:
                             var stats = dl.getStats();
-                            var download_speed_and_unit = getDownloadSpeed(stats.present.speed || 0);
+                            var download_speed_and_unit = utils.getDownloadSpeed(stats.present.speed || 0);
                             $downloadSpeedValue.html(download_speed_and_unit.value);
                             $downloadSpeedUnit.html(download_speed_and_unit.unit);
                             $progressIndividual.progress("set percent", stats.total.completed);
@@ -1295,16 +1298,16 @@ function initDownload($course, courseData, subTitle = "") {
                     .addClass(labelColorMap[lectureQuality] || "grey");
 
                 if (attachment["type"] == "Article" || attachment["type"] == "Url") {
-                    const wfDir = downloadDirectory + "/" + courseName + "/" + chapter_name;
+                    const wfDir = downloadDirectory + "/" + courseName + "/" + chapterName;
                     fs.writeFile(
-                        getSequenceName(lectureIndex + 1, num_lectures, attachmentName + ".html", `.${index + 1} `, wfDir).fullPath,
+                        getSequenceName(lectureIndex + 1, totallectures, attachmentName + ".html", `.${index + 1} `, wfDir).fullPath,
                         attachment["src"],
                         function () {
                             index++;
                             if (index == total_assets) {
                                 $progressCombined.progress("increment");
                                 downloaded++;
-                                downloadLecture(chapterIndex, ++lectureIndex, num_lectures, chapter_name);
+                                downloadLecture(chapterIndex, ++lectureIndex, totallectures, chapterName);
                             } else {
                                 downloadAttachments(index, total_assets);
                             }
@@ -1315,12 +1318,12 @@ function initDownload($course, courseData, subTitle = "") {
                     let fileExtension = attachment.src.split("/").pop().split("?").shift().split(".").pop();
                     fileExtension = attachment.name.split(".").pop() == fileExtension ? "" : "." + fileExtension;
 
-                    const seqName = getSequenceName(
+                    const seqName = utils.getSequenceName(
                         lectureIndex + 1,
-                        num_lectures,
-                        attachmentName + fileExtension,
+                        totallectures,
+                        sanitize(attachmentName) + fileExtension,
                         `.${index + 1} `,
-                        `${downloadDirectory}/${courseName}/${chapter_name}`
+                        `${downloadDirectory}/${courseName}/${chapterName}`
                     );
 
                     if (fs.existsSync(seqName.fullPath + ".mtd") && !fs.statSync(seqName.fullPath + ".mtd").size) {
@@ -1349,7 +1352,7 @@ function initDownload($course, courseData, subTitle = "") {
                         if (index == total_assets) {
                             $progressCombined.progress("increment");
                             downloaded++;
-                            downloadLecture(chapterIndex, ++lectureIndex, num_lectures, chapter_name);
+                            downloadLecture(chapterIndex, ++lectureIndex, totallectures, chapterName);
                         } else {
                             downloadAttachments(index, total_assets);
                         }
@@ -1363,7 +1366,7 @@ function initDownload($course, courseData, subTitle = "") {
 
                 if (attachment) {
                     // order by name
-                    courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"].sort(dynamicSort("name"));
+                    courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"].sort(utils.dynamicSort("name"));
 
                     var total_assets = attachment.length;
                     var index = 0;
@@ -1371,7 +1374,7 @@ function initDownload($course, courseData, subTitle = "") {
                 } else {
                     $progressCombined.progress("increment");
                     downloaded++;
-                    downloadLecture(chapterIndex, ++lectureIndex, num_lectures, chapter_name);
+                    downloadLecture(chapterIndex, ++lectureIndex, totallectures, chapterName);
                 }
             }
 
@@ -1384,12 +1387,12 @@ function initDownload($course, courseData, subTitle = "") {
                     .addClass(labelColorMap["Subtitle"] || "grey");
                 $downloadSpeedValue.html(0);
 
-                const seqName = getSequenceName(
+                const seqName = utils.getSequenceName(
                     lectureIndex + 1,
-                    num_lectures,
-                    lectureName + ".srt",
+                    totallectures,
+                    sanitizedLectureName + ".srt",
                     ". ",
-                    `${downloadDirectory}/${courseName}/${chapter_name}`
+                    `${downloadDirectory}/${courseName}/${chapterName}`
                 );
 
                 if (fs.existsSync(seqName.fullPath)) {
@@ -1521,14 +1524,14 @@ function initDownload($course, courseData, subTitle = "") {
                 .addClass(labelColorMap[lectureQuality] || "grey");
 
             if (lectureType == "article" || lectureType == "url") {
-                const wfDir = `${downloadDirectory}/${courseName}/${chapter_name}`;
+                const wfDir = `${downloadDirectory}/${courseName}/${chapterName}`;
                 fs.writeFile(
-                    getSequenceName(lectureIndex + 1, num_lectures, lectureName + ".html", ". ", wfDir).fullPath,
+                    utils.getSequenceName(lectureIndex + 1, totallectures, sanitizedLectureName + ".html", ". ", wfDir).fullPath,
                     courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["src"],
                     function () {
                         if (courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"]) {
                             courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"].sort(
-                                dynamicSort("name")
+                                utils.dynamicSort("name")
                             );
                             var total_assets =
                                 courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"].length;
@@ -1537,17 +1540,17 @@ function initDownload($course, courseData, subTitle = "") {
                         } else {
                             $progressCombined.progress("increment");
                             downloaded++;
-                            downloadLecture(chapterIndex, ++lectureIndex, num_lectures, chapter_name);
+                            downloadLecture(chapterIndex, ++lectureIndex, totallectures, chapterName);
                         }
                     }
                 );
             } else {
-                const seqName = getSequenceName(
+                const seqName = utils.getSequenceName(
                     lectureIndex + 1,
-                    num_lectures,
-                    lectureName + (lectureType == "file" ? ".pdf" : ".mp4"),
+                    totallectures,
+                    sanitizedLectureName + (lectureType == "file" ? ".pdf" : ".mp4"),
                     ". ",
-                    `${downloadDirectory}/${courseName}/${chapter_name}`
+                    `${downloadDirectory}/${courseName}/${chapterName}`
                 );
 
                 // $lecture_name.html(`${coursedata["chapters"][chapterindex].name}\\${coursedata["chapters"][chapterindex]["lectures"][lectureindex].name}`);
@@ -1599,7 +1602,7 @@ function initDownload($course, courseData, subTitle = "") {
                                 var timeDiff = (endTime - startTime) / 1000.0;
                                 var chunkSize = Math.floor(response.byteLength / 1024) || 1;
 
-                                var download_speed_and_unit = getDownloadSpeed(chunkSize / timeDiff);
+                                var download_speed_and_unit = utils.getDownloadSpeed(chunkSize / timeDiff);
                                 $downloadSpeedValue.html(download_speed_and_unit.value);
                                 $downloadSpeedUnit.html(download_speed_and_unit.unit);
                                 result[count] = response;
@@ -2052,5 +2055,4 @@ process.on("unhandledRejection", (error) => {
 });
 
 // console.table(getAllDownloadsHistory());
-console.log("access-token", Settings.accessToken());
 checkLogin();
