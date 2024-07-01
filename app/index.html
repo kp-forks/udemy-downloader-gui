@@ -65,12 +65,8 @@
     var template = `
           <div class="ui center aligned login grid">
             <div class="ui login dimmer inverted">
-              <div class="ui big text loader">${translate("Logging in")}</div>
-            </div>
-
-            <div class="ui authenticator dimmer inverted">
               <div class="ui big text loader">
-                ${translate("Awaiting Login Request")}
+                ${translate("Logging in")}
               </div>
             </div>
 
@@ -399,9 +395,43 @@
                   </p>
                   <br>
 
+                  <div class="ui placeholder segment">
+                    <div class="ui two column centered grid">
+                        <div class="middle aligned column centered">
+                            <div class="ui form centered">
+                                <div class="field centered">
+                                    <label>PayPal</label>
+                                    <div class="ui left">
+                                        <a href="${urlDonate()}" class="ui donate">
+                                            <img src="./assets/images/donate-qrcode.png" alt="${translate("Donate")} (for maintainer)" width="168" height="168"/>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="middle aligned column centered">
+                            <div class="ui form centered">
+                                <div class="field centered">
+                                    <label>PixMe</label>
+                                    <div class="ui centered">
+                                        <a href="https://www.pixme.bio/heliomarpm" class="ui donate">
+                                            <img src="./assets/images/donate-pixme.png" alt="${translate("Donate")} (for maintainer)" width="170" height="170"/>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ui vertical divider">
+                        Or
+                    </div>
+                  </div>
+
+                  <!--
                   <a href="${urlDonate()}" class="ui centered donate grid">
                     <img src="./assets/images/donate-qrcode.png" alt="${translate("Donate")} (for maintainer)"/>
                   </a>
+                  -->
 
                   <div class="ui horizontal divider"></div>
                   <div class="ui clearing divider"></div>
@@ -507,7 +537,7 @@
 
     $("body").prepend(template);
 
-    if (Settings.get("general.language") == "Arabic") {
+    if (Settings.language == "Arabic") {
       $(".ui.dashboard .content")
         .css("margin-left", "10px")
         .css("width", "80%");
