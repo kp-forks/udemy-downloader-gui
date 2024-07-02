@@ -95,5 +95,6 @@
   "Get Credentials": "ማለፊያ ያግኙ",
   "Note: When the selected option is not available in the Udemy API, the highest quality available will be downloaded.": "ማስታወሻ፡ የተመረጠው አማራጭ በUdemy API ውስጥ በማይገኝበት ጊዜ፣ የተገኘው ከፍተኛ ጥራት ይወርዳል።",
   "How to get an Access Token": "ማለፊያ እንዴት ማግኘት እንደሚቻል",
-  "Subscriber Account": "የተመዝጋቢ አካውንት"
+  "Subscriber Account": "የተመዝጋቢ አካውንት",
+  "Saving download history": ""
 }

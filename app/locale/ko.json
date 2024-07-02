@@ -95,5 +95,6 @@
   "Get Credentials": "크레덴셜 가져오기",
   "Note: When the selected option is not available in the Udemy API, the highest quality available will be downloaded.": "참고: Udemy API에서 선택한 옵션이 없을 경우, 가장 높은 해상도로 다운로드됩니다.",
   "How to get an Access Token": "액세스 토큰 가져오는 방법",
-  "Subscriber Account": "구독 계정"
+  "Subscriber Account": "구독 계정",
+  "Saving download history": ""
 }

@@ -1,7 +1,7 @@
 "use strict"
 
 const ui = {
-    navSidebar(tab, tabName) {
+    navSidebar: (tab, tabName) => {
         $(".content .ui.section").hide();
         $(`.content .ui.${tabName}.section`).show();
         $(tab).parent(".sidebar").find(".active").removeClass("active purple");
@@ -9,6 +9,15 @@ const ui = {
     },
     busyOff: () => {
         $(".ui.dimmer").removeClass("active");
+    },
+    busy: (isActive, text) => {
+        const $busyDimmer = $(".ui.dashboard .dimmer");
+        $busyDimmer.find(".ui.big.text.loader").text(text);
+        if (isActive) {
+            $busyDimmer.addClass("active");
+        } else {
+            $busyDimmer.removeClass("active");
+        }
     },
     busyLogin: (isActive) => {
         const $busyDimmer = $(".ui.login.dimmer");
@@ -19,44 +28,22 @@ const ui = {
         }
     },
     busyLogout: (isActive) => {
-        const $busyDimmer = $(".ui.logout.dimmer");
-        if (isActive) {
-            $busyDimmer.addClass("active");
-        } else {
-            $busyDimmer.removeClass("active");
-        }
+        ui.busy(isActive, translate("Logging Out"));
     },
     busyCheckUpdate: (isActive) => {
-        const $busyDimmer = $(".ui.dashboard .about.dimmer");
-        if (isActive) {
-            $busyDimmer.addClass("active");
-        } else {
-            $busyDimmer.removeClass("active");
-        }
+        ui.busy(isActive, translate("Checking for Updates"));
     },
     busyLoadCourses: (isActive) => {
-        const $busyDimmer = $(".ui.dashboard .courses.dimmer");
-        if (isActive) {
-            $busyDimmer.addClass("active");
-        } else {
-            $busyDimmer.removeClass("active");
-        }
+        ui.busy(isActive, translate("Loading Courses"));
     },
     busyPrepareDownload: (isActive) => {
-        const $busyDimmer = $(".ui.dashboard .course.dimmer");
-        if (isActive) {
-            $busyDimmer.addClass("active");
-        } else {
-            $busyDimmer.removeClass("active");
-        }
+        ui.busy(isActive, translate("Getting Info"));
     },
     busyLoadDownloads: (isActive) => {
-        const $busyDimmer = $(".ui.dashboard .downloads.dimmer");
-        if (isActive) {
-            $busyDimmer.addClass("active");
-        } else {
-            $busyDimmer.removeClass("active");
-        }
+        ui.busy(isActive, translate("Loading Downloads"));
+    },
+    busySavingHistory: (isActive) => {
+        ui.busy(isActive, translate("Saving download history"));
     },
     showModalUpdate: () => {
         $(".ui.update-available.modal").modal("show");

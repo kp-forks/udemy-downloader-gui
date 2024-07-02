@@ -56,11 +56,10 @@ $(".courses-sidebar").on("click", function () {
     ui.navSidebar(this, "courses");
 });
 
-$(".downloads-sidebar").on("click", function () {
+$(".downloads-sidebar").on("click", async function () {
     ui.navSidebar(this, "downloads");
-    ui.busyLoadDownloads(true);
+    await utils.delay(1000);
     renderDownloads();
-    ui.busyLoadDownloads(false);
 });
 
 $(".settings-sidebar").on("click", function () {
@@ -620,7 +619,7 @@ function initializeDownload($course, subtitle) {
 
                 function getLecture(lectureName, chapterIndex, lectureIndex) {
                     const url = `https://${Settings.subDomain}.udemy.com/api-2.0/users/me/subscribed-courses/${courseId}/lectures/${v.id}?fields[lecture]=asset,supplementary_assets&fields[asset]=stream_urls,download_urls,captions,title,filename,data,body,media_sources,media_license_token`;
-                    console.log("getLecture", url);
+                    // console.log("getLecture", url);
 
                     axios({
                         timeout: ajaxTimeout,
@@ -720,7 +719,7 @@ function initializeDownload($course, subtitle) {
 
                             $.each(resp.supplementary_assets, function (a, b) {
                                 const url = `https://${Settings.subDomain}.udemy.com/api-2.0/users/me/subscribed-courses/${courseId}/lectures/${v.id}/supplementary-assets/${b.id}?fields[asset]=download_urls,external_url,asset_type`;
-                                console.log("getLecture&Attachments", url);
+                                // console.log("getLecture&Attachments", url);
 
                                 axios({
                                     timeout: ajaxTimeout,
@@ -765,7 +764,7 @@ function initializeDownload($course, subtitle) {
                                         }
                                     }
                                 }).catch((error) => {
-                                    const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+                                    const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
                                     appendLog(`getLectureAndAttachments_Error: (${statusCode})`, error.message);
                                     resetCourse($course, $course.find(".download-error"), false, courseData);
                                 });
@@ -783,7 +782,7 @@ function initializeDownload($course, subtitle) {
                             }
                         }
                     }).catch((error) => {
-                        const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+                        const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
                         appendLog(`getLecture_Error: (${statusCode})`, error.message);
                         resetCourse($course, $course.find(".download-error"), false, courseData);
                     });
@@ -1288,19 +1287,19 @@ function initDownload($course, courseData, subTitle = "") {
                 });
 
                 var caption = courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["caption"];
-                var available = [];
+                const availables = [];
                 $.map(subtitle, function (el) {
                     if (el in caption) {
-                        available.push(el);
+                        availables.push(el);
                     }
                 });
 
-                var download_this_sub = available[0] || Object.keys(caption)[0] || "";
+                var download_this_sub = availables[0] || Object.keys(caption)[0] || "";
                 // Prefer non "[Auto]" subs (likely entered by the creator of the lecture.)
-                if (available.length > 1) {
-                    for (let key in available) {
-                        if (available[key].indexOf("[Auto]") == -1 || available[key].indexOf(`[${translate("Auto")}]`) == -1) {
-                            download_this_sub = available[key];
+                if (availables.length > 1) {
+                    for (let key in availables) {
+                        if (availables[key].indexOf("[Auto]") == -1 || availables[key].indexOf(`[${translate("Auto")}]`) == -1) {
+                            download_this_sub = availables[key];
                             break;
                         }
                     }
@@ -1535,28 +1534,22 @@ function initDownload($course, courseData, subTitle = "") {
     }
 }
 
-function askForSubtitle(availableSubs, initDownload, $course, courseData, defaultSubtitle = "") {
-    var $subtitleModal = $(".ui.subtitle.modal");
-    var $subtitleDropdown = $subtitleModal.find(".ui.dropdown");
-    var subtitleLanguages = [];
-    var languages = [];
-    var totals = [];
-    var languageKeys = {};
+function askForSubtitle(subtitlesAvailable, fnDownload, $course, courseData, defaultSubtitle = "") {
+    const subtitleLanguages = [];
+    const languages = [];
+    const totals = {};
+    const languageKeys = {};
 
-    defaultSubtitle = defaultSubtitle
-        .replace("[Auto]", "")
-        .replace(`[${translate("Auto")}]`, "")
-        .trim();
+    debugger
+    if (!subtitlesAvailable) return;
 
-    for (var key in availableSubs) {
-        const subtitle = key
-            .replace("[Auto]", "")
-            .replace(`[${translate("Auto")}]`, "")
-            .trim();
+    defaultSubtitle = defaultSubtitle.replace(/\s*\[.*?\]/g, '').trim();
+    for (const key in subtitlesAvailable) {
+        const subtitle = key.replace(/\s*\[.*?\]/g, '').trim();
 
         // default subtitle exists
         if (subtitle === defaultSubtitle) {
-            initDownload($course, courseData, key);
+            fnDownload($course, courseData, key);
             return;
         }
 
@@ -1566,40 +1559,43 @@ function askForSubtitle(availableSubs, initDownload, $course, courseData, defaul
             languageKeys[subtitle] = [];
         }
 
-        totals[subtitle] += availableSubs[key];
+        totals[subtitle] += subtitlesAvailable[key];
         languageKeys[subtitle].push(key);
+    };
+
+    if (languages.length === 1) {
+        fnDownload($course, courseData, languageKeys[0]);
+        return;
+    } else if (languages.length === 0) {
+        return;
     }
 
-    if (languages.length == 1) {
-        initDownload($course, courseData, languageKeys[0]);
-        return;
-    } else if (languages.length == 0) {
-        return;
-    }
-
-    for (var total in totals) {
-        totals[total] = Math.min(courseData["totalLectures"], totals[total]);
-    }
+    languages.forEach(language => {
+        totals[language] = Math.min(courseData["totalLectures"], totals[language]);
+    });
 
     languages.sort();
-    for (var language of languages) {
+    languages.forEach(language => {
         subtitleLanguages.push({
             name: `<b>${language}</b> <i>${totals[language]} ${translate("Lectures")}</i>`,
             value: languageKeys[language].join("|"),
         });
-    }
+    });
+
+    const $subtitleModal = $(".ui.subtitle.modal");
+    const $subtitleDropdown = $subtitleModal.find(".ui.dropdown");
 
     $subtitleModal.modal({ closable: false }).modal("show");
-
     $subtitleDropdown.dropdown({
         values: subtitleLanguages,
-        onChange: function (subtitle) {
+        onChange: (subtitle) => {
             $subtitleModal.modal("hide");
             $subtitleDropdown.dropdown({ values: [] });
-            initDownload($course, courseData, subtitle);
+            fnDownload($course, courseData, subtitle);
         },
     });
 }
+
 
 function resetCourse($course, $elMessage, autoRetry, courseData, subtitle) {
     if ($elMessage.hasClass("download-success")) {
@@ -1663,33 +1659,30 @@ function renderCourses(response, keyword = "") {
 
 function renderDownloads() {
     console.log("renderDownloads");
+    ui.busyLoadDownloads(true);
 
-    // const courseItems = $(".ui.downloads.section .ui.courses.items .ui.course.item");
-    // if (courseItems.length) {
-    //     return;
-    // }
     const $downloadsSection = $(".ui.downloads.section .ui.courses.items");
-    const downloadedCourses = Settings.downloadedCourses || [];
 
+    const downloadedCourses = Settings.downloadedCourses || [];
     if (!downloadedCourses.length) {
         $downloadsSection.append(
             `<div class="ui yellow message disposable">
                 ${translate("There are no Downloads to display")}
             </div>`
         );
-
-        return;
     }
+    else {
+        downloadedCourses.forEach(course => {
+            const $courseItem = htmlCourseCard(course, true);
+            $downloadsSection.append($courseItem);
 
-    downloadedCourses.forEach(course => {
-        const $courseItem = htmlCourseCard(course, true);
-        $downloadsSection.append($courseItem);
-
-        if (!course.completed && Settings.download.autoStartDownload) {
-            initializeDownload($courseItem, course.selectedSubtitle);
-            // $courseItem.find(".action.buttons").find(".pause.button").removeClass("disabled");
-        }
-    });
+            if (!course.completed && Settings.download.autoStartDownload) {
+                initializeDownload($courseItem, course.selectedSubtitle);
+                // $courseItem.find(".action.buttons").find(".pause.button").removeClass("disabled");
+            }
+        });
+    }
+    ui.busyLoadDownloads(false);
 }
 
 function loadMore(loadMoreButton) {
@@ -1714,7 +1707,7 @@ function loadMore(loadMoreButton) {
             $button.data("url", resp.next);
         }
     }).catch(error => {
-        const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+        const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
         appendLog(`loadMore_Error: (${statusCode})`, error.message);
     }).finally(() => {
         ui.busyLoadCourses(false);
@@ -1740,7 +1733,7 @@ function search(keyword) {
         renderCourses(response.data, keyword);
         ui.busyLoadCourses(false);
     }).catch(error => {
-        const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+        const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
         appendLog(`search_Error: (${statusCode})`, error.message);
         ui.busyLoadCourses(false);
     });
@@ -1828,6 +1821,7 @@ function getDownloadHistory(courseId) {
 }
 
 function saveDownloads(shouldQuitApp) {
+    ui.busySavingHistory(true);
 
     function getProgress($progress) {
         const dataPercent = $progress.attr("data-percent");
@@ -1872,6 +1866,8 @@ function saveDownloads(shouldQuitApp) {
 
     if (shouldQuitApp) {
         ipcRenderer.send("quitApp");
+    } else {
+        ui.busySavingHistory(false);
     }
 }
 

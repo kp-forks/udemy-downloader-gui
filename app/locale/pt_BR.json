@@ -84,7 +84,7 @@
   "Icon Designer": "Designer do Icone",
   "Contains DRM protection and cannot be downloaded": "Contém proteção DRM e não pode ser baixado",
   "Check for a new version on startup": "Verifique se há uma nova versão na inicialização",
-  "Start pending downloads at startup": "Comece as transferências pendentes na inicialização",
+  "Start pending downloads at startup": "Comece os downloads pendentes na inicialização",
   "Skip lessons Blocked by DRM encryption while downloading": "Ignore as lições bloqueadas pela criptografia DRM durante o download.",
   "If course is encrypted, keep downloading attachments and videos not encrypted": "",
   "Collaborate": "Colaborar",
@@ -95,5 +95,6 @@
   "Get Credentials": "Obter credenciais",
   "Note: When the selected option is not available in the Udemy API, the highest quality available will be downloaded.": "Nota: Quando a opção selecionada não está disponível na API da Udemy, a qualidade mais alta disponível será baixada.",
   "How to get an Access Token": "Como obter o Access Token",
-  "Subscriber Account": "Conta de Assinante"
+  "Subscriber Account": "Conta de Assinante",
+  "Saving download history": "Salvando histórico de downloads"
 }
