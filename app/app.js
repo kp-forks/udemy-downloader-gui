@@ -58,7 +58,6 @@ $(".courses-sidebar").on("click", function () {
 
 $(".downloads-sidebar").on("click", async function () {
     ui.navSidebar(this, "downloads");
-    await utils.delay(1000);
     renderDownloads();
 });
 
@@ -1297,7 +1296,7 @@ function initDownload($course, courseData, subTitle = "") {
                 var download_this_sub = availables[0] || Object.keys(caption)[0] || "";
                 // Prefer non "[Auto]" subs (likely entered by the creator of the lecture.)
                 if (availables.length > 1) {
-                    for(const key in availables) {
+                    for (const key in availables) {
                         if (availables[key].indexOf("[Auto]") == -1 || availables[key].indexOf(`[${translate("Auto")}]`) == -1) {
                             download_this_sub = availables[key];
                             break;
@@ -1633,9 +1632,11 @@ function renderCourses(response, keyword = "") {
     $coursesSection.find(".disposable").remove();
 
     if (response.results.length) {
-        response.results.forEach(course => {
-            $coursesItems.append(htmlCourseCard(course));
-        });
+        // response.results.forEach(course => {
+        //     $coursesItems.append(htmlCourseCard(course));
+        // });
+        const courseElements = response.results.map(course => htmlCourseCard(course));
+        $coursesItems.append(courseElements);
 
         if (response.next) {
             // added loadMore Button
@@ -1645,6 +1646,7 @@ function renderCourses(response, keyword = "") {
                 </button>`
             );
         }
+
     } else {
         let msg = "";
         if (!keyword.length) {
@@ -1660,34 +1662,66 @@ function renderCourses(response, keyword = "") {
             </div>`
         );
     }
+
 }
 
-function renderDownloads() {
+async function renderDownloads() {
     console.log("renderDownloads");
-    ui.busyLoadDownloads(true);
 
     const $downloadsSection = $(".ui.downloads.section .ui.courses.items");
+    if ($downloadsSection.find(".ui.course.item").length) {
+        return;
+    }
 
     const downloadedCourses = Settings.downloadedCourses || [];
     if (!downloadedCourses.length) {
         $downloadsSection.append(
             `<div class="ui yellow message disposable">
-                ${translate("There are no Downloads to display")}
+            ${translate("There are no Downloads to display")}
             </div>`
         );
     }
     else {
-        downloadedCourses.forEach(course => {
-            const $courseItem = htmlCourseCard(course, true);
-            $downloadsSection.append($courseItem);
+        ui.busyLoadDownloads(true);
+        // await utils.sleep(10);
+        // // downloadedCourses.forEach(course => {
+        // downloadedCourses.map(course => {
+        //     const $courseItem = htmlCourseCard(course, true);
+        //     $downloadsSection.append($courseItem);
 
-            if (!course.completed && Settings.download.autoStartDownload) {
-                initializeDownload($courseItem, course.selectedSubtitle);
-                // $courseItem.find(".action.buttons").find(".pause.button").removeClass("disabled");
-            }
-        });
+        //     if (!course.completed && Settings.download.autoStartDownload) {
+        //         initializeDownload($courseItem, course.selectedSubtitle);
+        //         // $courseItem.find(".action.buttons").find(".pause.button").removeClass("disabled");
+        //     }
+        // });
+        // ui.busyLoadDownloads(false);
+
+        function addCourseToDOM(course) {
+            return new Promise((resolve, _reject) => {
+                const $courseItem = htmlCourseCard(course, true);
+                $downloadsSection.append($courseItem);
+
+                if (!course.completed && Settings.download.autoStartDownload) {
+                    initializeDownload($courseItem, course.selectedSubtitle);
+                }
+
+                // Simula atraso de 200ms para demonstração
+                // setTimeout(() => { resolve(); }, 200);
+                resolve();
+            });
+        }
+
+        const promises = downloadedCourses.map(course => addCourseToDOM(course));
+
+        // Executa todas as Promessas em paralelo
+        Promise.all(promises)
+            .then(() => ui.busyLoadDownloads(false))
+            .catch(error => {
+                console.error("Error adding courses:", error);
+                ui.busyLoadDownloads(false);
+            });
+
     }
-    ui.busyLoadDownloads(false);
 }
 
 function loadMore(loadMoreButton) {
