@@ -1297,12 +1297,18 @@ function initDownload($course, courseData, subTitle = "") {
                 var download_this_sub = availables[0] || Object.keys(caption)[0] || "";
                 // Prefer non "[Auto]" subs (likely entered by the creator of the lecture.)
                 if (availables.length > 1) {
-                    for (let key in availables) {
+                    for(const key in availables) {
                         if (availables[key].indexOf("[Auto]") == -1 || availables[key].indexOf(`[${translate("Auto")}]`) == -1) {
                             download_this_sub = availables[key];
                             break;
                         }
                     }
+                    // availables.forEach(key=> {
+                    //     if (availables[key].indexOf("[Auto]") == -1 || availables[key].indexOf(`[${translate("Auto")}]`) == -1) {
+                    //         download_this_sub = availables[key];
+                    //         return;
+                    //     }
+                    // })
                 }
 
                 https.get(
@@ -1540,7 +1546,6 @@ function askForSubtitle(subtitlesAvailable, fnDownload, $course, courseData, def
     const totals = {};
     const languageKeys = {};
 
-    debugger
     if (!subtitlesAvailable) return;
 
     defaultSubtitle = defaultSubtitle.replace(/\s*\[.*?\]/g, '').trim();
