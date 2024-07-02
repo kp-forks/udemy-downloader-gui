@@ -5,13 +5,15 @@ const { dialog, BrowserWindow } = remote;
 const axios = require("axios");
 const fs = require("fs");
 
-const prompt = require("dialogs")({});
+const dialogs = require("dialogs")({});
 
 const sanitize = require("sanitize-filename");
 const vtt2srt = require("node-vtt-to-srt");
 const Downloader = require("mt-files-downloader");
 const https = require("https");
 const cookie = require("cookie");
+
+const Settings = require('./js/settings.js')
 const utils = require("./js/utils");
 const ui = require("./js/ui");
 
@@ -23,11 +25,9 @@ let loggers = [];
 let headersAuth;
 let repoAccount = "heliomarpm";
 
-// require('auto_authenticator.js');
+// require('./js/auto_authenticator.js');
 
-ipcRenderer.on("saveDownloads", function () {
-    saveDownloads(true);
-});
+ipcRenderer.on("saveDownloads", () => saveDownloads(true));
 
 // external browser
 // $(document).on('click', 'a[href^="http"]', (event) => {
@@ -36,13 +36,13 @@ $(document).on("click", ".how-get-token", (event) => {
     shell.openExternal(event.target.href);
 });
 
-$(".ui.dropdown").dropdown();
-
 $(document).ajaxError(function (_event, _request) {
     $(".dimmer").removeClass("active");
 });
 
-$(".ui.login #business").change(function () {
+$(".ui.dropdown").dropdown();
+
+$(".ui.login #business").on("change", function () {
     if ($(this).is(":checked")) {
         ui.$subdomainField.val(Settings.subDomain);
         ui.toggleSubdomainField(true);
@@ -52,9 +52,51 @@ $(".ui.login #business").change(function () {
     }
 });
 
+$(".courses-sidebar").on("click", function () {
+    ui.navSidebar(this, "courses");
+});
+
+$(".downloads-sidebar").on("click", function () {
+    ui.navSidebar(this, "downloads");
+    ui.busyLoadDownloads(true);
+    renderDownloads();
+    ui.busyLoadDownloads(false);
+});
+
+$(".settings-sidebar").on("click", function () {
+    ui.navSidebar(this, "settings");
+    loadSettings();
+});
+
+$(".about-sidebar").on("click", function () {
+    ui.navSidebar(this, "about");
+});
+
+$(".logger-sidebar").on("click", function () {
+    ui.navSidebar(this, "logger");
+    clearBagdeLoggers();
+});
+
+$(".logout-sidebar").on("click", function () {
+    dialogs.confirm(translate("Confirm Log Out?"), function (ok) {
+        if (ok) {
+            ui.busyLogout(true);
+            saveDownloads(false);
+            Settings.accessToken = null;
+            ui.resetToLogin();
+        }
+    });
+});
+
+$(".ui.dashboard .content").on("click", ".load-more.button", (e) => loadMore(e.currentTarget));
+
+$(".ui.dashboard .content").on("click", ".dismiss-download", function () {
+    const courseId = $(this).parents(".course.item").attr("course-id");
+    removeCurseDownloads(courseId);
+});
+
 $(".ui.dashboard .content").on("click", ".open-in-browser", function () {
     const link = `https://${Settings.subDomain}.udemy.com${$(this).parents(".course.item").attr("course-url")}`;
-    console.log("open", link);
     shell.openExternal(link);
 });
 
@@ -63,37 +105,16 @@ $(".ui.dashboard .content").on("click", ".open-dir", function () {
     shell.openPath(pathDownloaded);
 });
 
-$(".ui.dashboard .content").on("click", ".dismiss-download", function () {
-    const courseId = $(this).parents(".course.item").attr("course-id");
-    removeCurseDownloads(courseId);
-});
+$(".ui.dashboard .content").on("click", ".check-updates", () => checkUpdate("heliomarpm"));
 
-$(".ui.dashboard .content").on("click", ".load-more.button", () => loadMore($(this)));
+$(".ui.dashboard .content").on("click", ".check-updates-original", () => checkUpdate("FaisalUmair"));
 
-$(".ui.dashboard .content").on("click", ".check-updates", function () {
-    checkUpdate("heliomarpm");
-});
-
-$(".ui.dashboard .content").on("click", ".check-updates-original", function () {
-    checkUpdate("FaisalUmair");
-});
-
-$(".ui.dashboard .content").on("click", ".old-version-mac", function () {
+$(".ui.dashboard .content").on("click", ".old-version-mac", () => {
     shell.openExternal("https://github.com/FaisalUmair/udemy-downloader-gui/releases/download/v1.8.2/Udeler-1.8.2-mac.dmg");
 });
 
-$(".ui.dashboard .content").on("click", ".old-version-linux", function () {
+$(".ui.dashboard .content").on("click", ".old-version-linux", () => {
     shell.openExternal("https://github.com/FaisalUmair/udemy-downloader-gui/releases/download/v1.8.2/Udeler-1.8.2-linux-x86_x64.AppImage");
-});
-
-$(".download-update.button").click(function () {
-    shell.openExternal(`https://github.com/${repoAccount}/udemy-downloader-gui/releases/latest`);
-});
-
-$(".ui.dashboard .content .courses.section .search.form").submit(function (e) {
-    e.preventDefault();
-    const keyword = $(e.target).find("input").val();
-    search(keyword);
 });
 
 $(".ui.dashboard .content").on("click", ".download-success, .course-encrypted", function () {
@@ -103,64 +124,21 @@ $(".ui.dashboard .content").on("click", ".download-success, .course-encrypted", 
 
 $(".ui.dashboard .content").on("click", ".download.button, .download-error", function (e) {
     e.stopImmediatePropagation();
-    downloadButtonClick($(this).parents(".course"));
+    initializeDownload($(this).parents(".course"));
 });
 
 $(".ui.dashboard .content").on("click", "#clear_logger", clearLogArea);
 
 $(".ui.dashboard .content").on("click", "#save_logger", saveLogFile);
 
-$(".courses-sidebar").click(function () {
-    $(".content .ui.section").hide();
-    $(".content .ui.courses.section").show();
-    $(this).parent(".sidebar").find(".active").removeClass("active purple");
-    $(this).addClass("active purple");
+$(".ui.dashboard .content .courses.section .search.form").on("submit", function (e) {
+    e.preventDefault();
+    const keyword = $(e.target).find("input").val();
+    search(keyword);
 });
 
-$(".downloads-sidebar").click(function () {
-    ui.dimmerDownloads(true);
-    $(".content .ui.section").hide();
-    $(".content .ui.downloads.section").show();
-    $(this).parent(".sidebar").find(".active").removeClass("active purple");
-    $(this).addClass("active purple");
-
-    rendererDownloads();
-});
-
-$(".settings-sidebar").click(function () {
-    $(".content .ui.section").hide();
-    $(".content .ui.settings.section").show();
-    $(this).parent(".sidebar").find(".active").removeClass("active purple");
-    $(this).addClass("active purple");
-
-    loadSettings();
-});
-
-$(".about-sidebar").click(function () {
-    $(".content .ui.section").hide();
-    $(".content .ui.about.section").show();
-    $(this).parent(".sidebar").find(".active").removeClass("active purple");
-    $(this).addClass("active purple");
-});
-
-$(".logger-sidebar").click(function () {
-    $(".content .ui.section").hide();
-    $(".content .ui.logger.section").show();
-    $(this).parent(".sidebar").find(".active").removeClass("active purple");
-    $(this).addClass("active purple");
-
-    clearBagdeLoggers();
-});
-
-$(".logout-sidebar").click(function () {
-    prompt.confirm(translate("Confirm Log Out?"), function (ok) {
-        if (ok) {
-            ui.dimmerLogout(true);
-            saveDownloads(false);
-            Settings.accessToken = null;
-            ui.resetToLogin();
-        }
-    });
+$(".download-update.button").on("click", () => {
+    shell.openExternal(`https://github.com/${repoAccount}/udemy-downloader-gui/releases/latest`);
 });
 
 $(".content .ui.about").on("click", 'a[href^="http"]', function (e) {
@@ -168,14 +146,14 @@ $(".content .ui.about").on("click", 'a[href^="http"]', function (e) {
     shell.openExternal(this.href);
 });
 
-$(".ui.settings .form").submit((e) => {
+$(".ui.settings .form").on("submit", (e) => {
     e.preventDefault();
     saveSettings(e.target);
 });
 
 const $settingsForm = $(".ui.settings .form");
 
-$settingsForm.find('input[name="enabledownloadstartend"]').change(function () {
+$settingsForm.find('input[name="enabledownloadstartend"]').on("change", function () {
     $settingsForm.find('input[name="downloadstart"], input[name="downloadend"]').prop("readonly", !this.checked);
 });
 
@@ -230,39 +208,39 @@ function saveSettings(formElement) {
     const def = Settings.DownloadDefaultOptions;
 
     const checkNewVersion = findInput("check-new-version")[0].checked ?? def.checkNewVersion;
+    const defaultSubtitle = findInput("defaultSubtitle").val() ?? def.defaultSubtitle;
+    const downloadPath = findInput("downloadpath").val() ?? def.path;
     const autoStartDownload = findInput("auto-start-download")[0].checked ?? def.autoStartDownload;
     const continueDonwloadingEncrypted = findInput("continue-downloading-encrypted")[0].checked ?? def.continueDonwloadingEncrypted;
     const enableDownloadStartEnd = findInput("enabledownloadstartend")[0].checked ?? def.enableDownloadStartEnd;
-    const downloadType = findInput("downloadType", ":checked").val() ?? def.type;
-    const skipSubtitles = findInput("skipsubtitles")[0].checked ?? def.skipSubtitles;
-    const autoRetry = findInput("autoretry")[0].checked ?? def.autoRetry;
     const downloadStart = parseInt(findInput("downloadstart").val() ?? def.downloadStart);
     const downloadEnd = parseInt(findInput("downloadend").val() ?? def.downloadEnd);
     const videoQuality = findInput("videoquality").val() ?? def.videoQuality;
-    const downloadPath = findInput("downloadpath").val() ?? def.path;
-    const language = findInput("language").val() ?? undefined;
-    const defaultSubtitle = findInput("defaultSubtitle").val() ?? def.defaultSubtitle;
+    const downloadType = findInput("downloadType", ":checked").val() ?? def.type;
+    const skipSubtitles = findInput("skipsubtitles")[0].checked ?? def.skipSubtitles;
     const seqZeroLeft = findInput("seq-zero-left")[0].checked ?? def.seqZeroLeft;
+    const autoRetry = findInput("autoretry")[0].checked ?? def.autoRetry;
+    const language = findInput("language").val() ?? undefined;
 
     Settings.download = {
         checkNewVersion,
+        defaultSubtitle,
+        path: downloadPath,
         autoStartDownload,
         continueDonwloadingEncrypted,
         enableDownloadStartEnd,
-        type: Number(downloadType),
-        skipSubtitles,
-        autoRetry,
         downloadStart,
         downloadEnd,
         videoQuality,
-        path: downloadPath,
-        defaultSubtitle,
+        type: Number(downloadType),
+        skipSubtitles,
         seqZeroLeft,
+        autoRetry,
     };
 
     Settings.language = language;
 
-    prompt.alert(translate("Settings Saved"));
+    showAlert(translate("Settings Saved"));
 }
 
 function selectDownloadPath() {
@@ -273,7 +251,7 @@ function selectDownloadPath() {
     if (path && path[0]) {
         fs.access(path[0], fs.constants.R_OK && fs.constants.W_OK, function (err) {
             if (err) {
-                prompt.alert(translate("Cannot select this folder"));
+                showAlert(translate("Cannot select this folder"));
             } else {
                 $settingsForm.find('input[name="downloadpath"]').val(path[0]);
             }
@@ -281,87 +259,93 @@ function selectDownloadPath() {
     }
 }
 
-function checkUpdate(account, silent = false) {
-    console.log("checkUpdate", { account, silent });
-
-    ui.dimmerCheckUpdate(true);
+async function checkUpdate(account, silent = false) {
+    ui.busyCheckUpdate(true);
 
     try {
-        $.getJSON(`https://api.github.com/repos/${account}/udemy-downloader-gui/releases/latest`, function (response) {
-            if (response.tag_name != `v${appVersion}`) {
-                repoAccount = account;
-                $(".ui.update-available.modal").modal("show");
-            } else {
-                if (!silent) {
-                    prompt.alert(translate("No updates available"));
-                }
+        const response = await fetch(`https://api.github.com/repos/${account}/udemy-downloader-gui/releases/latest`)
+
+        if (!response.ok) {
+            throw new Error(`Failed to check for updates: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.tag_name != `v${appVersion}`) {
+            repoAccount = account;
+            $(".ui.update-available.modal").modal("show");
+        } else {
+            if (!silent) {
+                showAlert(translate("No updates available"));
             }
-        });
+        }
     } catch (error) {
         console.error("Failed to check for updates", error);
         if (!silent) {
-            prompt.alert(translate("Failed to check for updates"));
+            showAlert(translate("Failed to check for updates"), translate("Check for updates"));
         }
+        appendLog("Failed to check for updates", error.message, true);
     } finally {
-        ui.dimmerCheckUpdate(false);
+        ui.busyCheckUpdate(false);
     }
 }
 
 function checkLogin() {
     if (Settings.accessToken) {
-        ui.dimmerLogin(true);
+        ui.busyLogin(true);
 
         headersAuth = { Authorization: `Bearer ${Settings.accessToken}` };
-
         let url = "https://www.udemy.com/api-2.0/contexts/me/?header=True";
-        console.log("checkLogin", { url, headersAuth });
 
         axios({
             timeout: ajaxTimeout,
-            type: "GET",
+            method: "GET",
             url,
             headers: headersAuth,
         }).then((response) => {
-            ui.dimmerLogin(false);
+            ui.busyLogin(false);
+            ui.busyLoadCourses(true);
             ui.showDashboard();
 
             const resp = response.data;
 
             const subscriber = utils.toBoolean(resp.header.user.enableLabsInPersonalPlan);
             Settings.subscriber = subscriber;
+
             url = !subscriber
                 ? `https://${Settings.subDomain}.udemy.com/api-2.0/users/me/subscribed-courses?page_size=${pageSize}&page_size=30&ordering=-last_accessed`
                 : `https://${Settings.subDomain}.udemy.com/api-2.0/users/me/subscription-course-enrollments?page_size=${pageSize}&page_size=30&ordering=-last_accessed`;
 
             axios({
                 timeout: ajaxTimeout,
-                type: "GET",
+                method: "GET",
                 url,
                 headers: headersAuth,
             }).then((response) => {
-                rendererCourse(response.data);
+                renderCourses(response.data);
+                ui.busyLoadCourses(false);
 
                 if (Settings.downloadedCourses) {
-                    rendererDownloads();
+                    renderDownloads();
                 }
 
                 if (Settings.download.checkNewVersion) {
                     checkUpdate(repoAccount, true);
                 }
             }).catch((error) => {
+                ui.busyOff();
                 console.error("beforeLogin_Error:", error);
-                prompt.alert(error.message);
+                showAlert(error.message, "Profile Error");
             });
         }).catch((error) => {
-            console.error("checkLogin_Error:", error);
-            prompt.alert(error.message);
             if (!process.env.DEBUG_MODE) Settings.accessToken = null;
+
+            ui.busyOff();
+            console.error("checkLogin_Error:", error);
+            showAlert(error.message, "Login Error");
 
             ui.resetToLogin();
         }).finally(() => {
-            console.log("login finish");
             console.log("access-token", Settings.accessToken);
-            ui.dimmerLogin(false);
         });
     }
 }
@@ -371,7 +355,7 @@ function loginWithUdemy() {
 
     if ($formLogin.find('input[name="business"]').is(":checked")) {
         if (!ui.$subdomainField.val()) {
-            prompt.alert("Type Business Name");
+            showAlert("Type Business Name");
             return;
         }
     } else {
@@ -421,14 +405,14 @@ function loginWithAccessToken() {
 
     if ($formLogin.find('input[name="business"]').is(":checked")) {
         if (!ui.$subdomainField.val()) {
-            prompt.alert("Type Business Name");
+            showAlert("Type Business Name");
             return;
         }
     } else {
         ui.$subdomainField.val("www");
     }
 
-    prompt.prompt("Access Token", (access_token) => {
+    dialogs.prompt("Access Token", (access_token) => {
         if (access_token) {
             const submain = ui.$subdomainField.val();
             Settings.accessToken = access_token;
@@ -559,7 +543,7 @@ function htmlCourseCard(course, downloadSection = false) {
     return $course;
 }
 
-function downloadButtonClick($course, subtitle) {
+function initializeDownload($course, subtitle) {
     ui.prepareDownload($course);
 
     const courseId = $course.attr("course-id");
@@ -573,7 +557,7 @@ function downloadButtonClick($course, subtitle) {
     console.clear();
     console.log("downloadButtonClick", url);
 
-    ui.dimmerPrepareDownload(true);
+    ui.busyPrepareDownload(true);
     axios({
         timeout: ajaxTimeout,
         type: "GET",
@@ -623,7 +607,6 @@ function downloadButtonClick($course, subtitle) {
                     v.asset.asset_type.toLowerCase() == "e-book")
             ) {
                 if (v.asset.asset_type.toLowerCase() != "video" && downloadType == Settings.DownloadType.OnlyLectures) {
-                    //skipAttachments) {
                     remaining--;
                     if (!remaining) {
                         if (Object.keys(availableSubs).length) {
@@ -680,8 +663,6 @@ function downloadButtonClick($course, subtitle) {
                             const lowest = Math.min(...qualities);
                             const highest = Math.max(...qualities);
 
-                            // if (qualities.length == 0 && Settings.download.videoQuality == "Highest")
-                            //   qualities.push("highest");
                             videoQuality = (qualities.length == 0 ? "Auto" : Settings.download.videoQuality).toString();
                             type = "Video";
                             src = medias[0].src ?? medias[0].file;
@@ -690,10 +671,6 @@ function downloadButtonClick($course, subtitle) {
                                 case "auto":
                                     videoQuality = medias[0].label;
                                     break;
-                                // case "highest":
-                                //   src = qualitySrcMap[highest];
-                                //   videoQuality = highest;
-                                //   break;
                                 case "lowest":
                                     src = qualitySrcMap[lowest];
                                     videoQuality = lowest;
@@ -738,7 +715,6 @@ function downloadButtonClick($course, subtitle) {
                         }
 
                         if (resp.supplementary_assets.length && downloadType != Settings.DownloadType.OnlyLectures) {
-                            //!skipAttachments) {
                             courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"] = [];
                             var supplementary_assets_remaining = resp.supplementary_assets.length;
 
@@ -789,8 +765,8 @@ function downloadButtonClick($course, subtitle) {
                                         }
                                     }
                                 }).catch((error) => {
-                                    const statusCode = error.response ? error.response.status : 0;
-                                    appendLog(`getLectureAndAttachments_Error: ${error.code}(${statusCode})`, error.message);
+                                    const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+                                    appendLog(`getLectureAndAttachments_Error: (${statusCode})`, error.message);
                                     resetCourse($course, $course.find(".download-error"), false, courseData);
                                 });
                             });
@@ -807,8 +783,8 @@ function downloadButtonClick($course, subtitle) {
                             }
                         }
                     }).catch((error) => {
-                        const statusCode = error.response ? error.response.status : 0;
-                        appendLog(`getLecture_Error: ${error.code}(${statusCode})`, error.message);
+                        const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+                        appendLog(`getLecture_Error: (${statusCode})`, error.message);
                         resetCourse($course, $course.find(".download-error"), false, courseData);
                     });
                 }
@@ -816,7 +792,6 @@ function downloadButtonClick($course, subtitle) {
                 getLecture(v.title, chapterIndex, lectureIndex);
                 lectureIndex++;
             } else if (downloadType != Settings.DownloadType.OnlyLectures) {
-                //(!skipAttachments) {
                 const srcUrl = `https://${Settings.subDomain}.udemy.com${$course.attr("course-url")}t/${v._class}/${v.id}`;
 
                 // Adiciona um chapter default, para cursos que tem apenas quiz
@@ -859,11 +834,11 @@ function downloadButtonClick($course, subtitle) {
         });
     }).catch((error) => {
         let msgError;
-        const statusCode = error.response?.status || error?.code || 0;
+        const statusCode = error.response?.status || 0;
         switch (statusCode) {
             case 403:
                 msgError = translate("You do not have permission to access this course") + `\nId: ${courseId}`;
-                prompt.alert(msgError);
+                showAlert(msgError, "Download Error");
                 break;
             case 504:
                 msgError = "Gateway timeout";
@@ -872,13 +847,13 @@ function downloadButtonClick($course, subtitle) {
                 msgError = error.message;
                 break;
         }
-
-        appendLog(`download_Error: ${error.code}(${statusCode})`, msgError);
+        const errorCode = error.code ? ` :${error.code}` : "";
+        appendLog(`download_Error: (${statusCode}${errorCode})`, msgError);
 
         ui.enableDownloadButton($course, true);
         ui.showProgress($course, false);
     }).finally(() => {
-        ui.dimmerPrepareDownload(false);
+        ui.busyPrepareDownload(false);
     });
 }
 
@@ -1019,7 +994,6 @@ function initDownload($course, courseData, subTitle = "") {
             downloadLecture(chapterIndex, lectureIndex, countLectures, seqName.name);
         } catch (err) {
             appendLog("downloadChapter_Error:", err.message);
-            //captureException(err);
             dialog.showErrorBox("downloadChapter_Error", err.message);
 
             resetCourse($course, $course.find(".download-error"), false, courseData);
@@ -1115,8 +1089,9 @@ function initDownload($course, courseData, subTitle = "") {
                                         subtitle
                                     );
                                 }).catch((error) => {
-                                    const statusCode = error.response ? error.response.status : 0;
-                                    appendLog(`downloadLecture_Error: ${error.code}(${statusCode})`, error.message);
+                                    const statusCode = error.response?.status || 0;
+                                    const errorCode = error.code ? ` :${error.code}` : "";
+                                    appendLog(`downloadLecture_Error: (${statusCode}${errorCode})`, error.message);
 
                                     try {
                                         if (statusCode == 401 || statusCode == 403) {
@@ -1165,7 +1140,6 @@ function initDownload($course, courseData, subTitle = "") {
                 });
 
                 dl.on("end", function () {
-                    // console.log("Download Finalizado", dl);
                     if (typeVideo && hasDRMProtection(dl)) {
                         $course.find('input[name="encryptedvideos"]').val(++courseData.encryptedVideos);
 
@@ -1269,7 +1243,6 @@ function initDownload($course, courseData, subTitle = "") {
                 const attachment = courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"];
 
                 if (attachment) {
-                    // order by name
                     courseData["chapters"][chapterIndex]["lectures"][lectureIndex]["supplementary_assets"].sort(utils.dynamicSort("name"));
 
                     var total_assets = attachment.length;
@@ -1597,7 +1570,6 @@ function askForSubtitle(availableSubs, initDownload, $course, courseData, defaul
         languageKeys[subtitle].push(key);
     }
 
-    // only a subtitle
     if (languages.length == 1) {
         initDownload($course, courseData, languageKeys[0]);
         return;
@@ -1651,87 +1623,101 @@ function resetCourse($course, $elMessage, autoRetry, courseData, subtitle) {
     $elMessage.css("display", "flex");
 }
 
-function rendererCourse(response, keyword = "") {
-    console.log("rendererCourse", response);
+function renderCourses(response, keyword = "") {
+    console.log("renderCourse", { response, keyword });
 
-    //activateBusy(false);
-    $(".ui.dashboard .ui.courses.section .disposable").remove();
-    $(".ui.dashboard .ui.courses.section .ui.courses.items").empty();
+    const $coursesSection = $(".ui.dashboard .ui.courses.section");
+    const $coursesItems = $coursesSection.find(".ui.courses.items").empty();
+
+    $coursesSection.find(".disposable").remove();
+
     if (response.results.length) {
-        $.each(response.results, function (index, course) {
-            $(".ui.dashboard .ui.courses.section .ui.courses.items").append(htmlCourseCard(course));
+        response.results.forEach(course => {
+            $coursesItems.append(htmlCourseCard(course));
         });
+
         if (response.next) {
-            $(".ui.courses.section").append(
+            // added loadMore Button
+            $coursesSection.append(
                 `<button class="ui basic blue fluid load-more button disposable" data-url=${response.next}>
-          ${translate("Load More")}
-        </button>`
+                    ${translate("Load More")}
+                </button>`
             );
         }
     } else {
         let msg = "";
-        if (keyword.length === 0) {
+        if (!keyword.length) {
             msg = getMsgChangeSearchMode();
             appendLog(translate("No Courses Found"), msg, false);
         }
 
-        $(".ui.dashboard .ui.courses.section .ui.courses.items").append(
+        $coursesItems.append(
             `<div class="ui yellow message disposable">
-        ${translate("No Courses Found")} <br/>
-        ${translate("Remember, you will only be able to see the courses you are enrolled in")}
-        ${msg}
-      </div>`
+                ${translate("No Courses Found")} <br/>
+                ${translate("Remember, you will only be able to see the courses you are enrolled in")}
+                ${msg}
+            </div>`
         );
     }
 }
 
-function rendererDownloads() {
-    console.log("rendererDownloads");
+function renderDownloads() {
+    console.log("renderDownloads");
 
-    const courseItems = $(".ui.downloads.section .ui.courses.items .ui.course.item");
-    if (courseItems.length) {
+    // const courseItems = $(".ui.downloads.section .ui.courses.items .ui.course.item");
+    // if (courseItems.length) {
+    //     return;
+    // }
+    const $downloadsSection = $(".ui.downloads.section .ui.courses.items");
+    const downloadedCourses = Settings.downloadedCourses || [];
+
+    if (!downloadedCourses.length) {
+        $downloadsSection.append(
+            `<div class="ui yellow message disposable">
+                ${translate("There are no Downloads to display")}
+            </div>`
+        );
+
         return;
     }
 
-    const downloadedCourses = Settings.downloadedCourses;
-    if (downloadedCourses) {
-        downloadedCourses.forEach(function (course) {
-            const $courseCard = htmlCourseCard(course, true);
-            $(".ui.downloads.section .ui.courses.items").append($courseCard);
+    downloadedCourses.forEach(course => {
+        const $courseItem = htmlCourseCard(course, true);
+        $downloadsSection.append($courseItem);
 
-            if (!course.completed && Settings.download.autoStartDownload) {
-                downloadButtonClick($courseCard, course.selectedSubtitle);
-                $courseCard.find(".action.buttons").find(".pause.button").removeClass("disabled");
-            }
-        });
-    }
+        if (!course.completed && Settings.download.autoStartDownload) {
+            initializeDownload($courseItem, course.selectedSubtitle);
+            // $courseItem.find(".action.buttons").find(".pause.button").removeClass("disabled");
+        }
+    });
 }
 
-function loadMore($loadMoreButton) {
-    const $courses = $loadMoreButton.prev(".courses.items");
-    const url = $loadMoreButton.data("url");
+function loadMore(loadMoreButton) {
+    const $button = $(loadMoreButton);
+    const $courses = $button.prev(".courses.items");
+    const url = $button.data("url");
 
-    ui.dimmerLoadCourses(true);
+    ui.busyLoadCourses(true);
     axios({
         timeout: ajaxTimeout,
         method: "GET",
         url,
-        headers: headersAuth,
+        headers: { Authorization: `Bearer weweqvasdvsadfw` } //headersAuth,
     }).then(({ data: resp }) => {
         // $.each(resp.results, (_index, course) => {
         //     htmlCourseCard(course).appendTo($courses);
         // });
         $courses.append(...resp.results.map(htmlCourseCard));
         if (!resp.next) {
-            $loadMoreButton.remove();
+            $button.remove();
         } else {
-            $loadMoreButton.data("url", resp.next);
+            $button.data("url", resp.next);
         }
     }).catch(error => {
-        const statusCode = error.response?.status || error?.code || 0;
-        appendLog(`loadMore_Error: ${error.code}(${statusCode})`, error.message);
+        const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+        appendLog(`loadMore_Error: (${statusCode})`, error.message);
     }).finally(() => {
-        ui.dimmerLoadCourses(false);
+        ui.busyLoadCourses(false);
     });
 }
 
@@ -1743,20 +1729,20 @@ function search(keyword) {
 
     console.log("search", url);
 
-    ui.dimmerLoadCourses(true);
+    ui.busyLoadCourses(true);
     axios({
         timeout: ajaxTimeout, // timeout to 5 seconds
-        type: "GET",
+        method: "GET",
         url,
         headers: headersAuth,
-    }).then((response) => {
+    }).then(response => {
         console.log("search done");
-        rendererCourse(response.data, keyword);
-    }).catch((error) => {
-        const statusCode = error.response ? error.response.status : 0;
-        appendLog(`search_Error: ${error.code}(${statusCode})`, error.message);
-    }).finally(() => {
-        ui.dimmerLoadCourses(false);
+        renderCourses(response.data, keyword);
+        ui.busyLoadCourses(false);
+    }).catch(error => {
+        const statusCode = (error.response?.status || 0).toString() + error.code ? ` :${error.code}` : "";
+        appendLog(`search_Error: (${statusCode})`, error.message);
+        ui.busyLoadCourses(false);
     });
 }
 
@@ -1841,54 +1827,64 @@ function getDownloadHistory(courseId) {
     }
 }
 
-function saveDownloads(quit) {
-    var downloadedCourses = [];
-    var $downloads = $(".ui.downloads.section .ui.courses.items .ui.course.item").slice(0);
+function saveDownloads(shouldQuitApp) {
 
-    if ($downloads.length) {
-        $downloads.each(function (index, elem) {
-            const $elem = $(elem);
-            const inProgress = $elem.find(".progress.active").length;
-            const individualProgress = inProgress ? $elem.find(".download-status .individual.progress").attr("data-percent") : 0;
-            const combinedProgress = inProgress ? $elem.find(".download-status .combined.progress").attr("data-percent") : 0;
-            const completed = inProgress ? false : Boolean($elem.attr("course-completed"));
-
-            var course = {
-                id: $elem.attr("course-id"),
-                url: $elem.attr("course-url"),
-                title: $elem.find(".coursename").text(),
-                image: $elem.find(".image img").attr("src"),
-                individualProgress: individualProgress > 100 ? 100 : individualProgress,
-                combinedProgress: combinedProgress > 100 ? 100 : combinedProgress,
-                completed,
-                progressStatus: $elem.find(".download-status .label").text(),
-                encryptedVideos: $elem.find('input[name="encryptedvideos"]').val(),
-                selectedSubtitle: $elem.find('input[name="selectedSubtitle"]').val(),
-                pathDownloaded: $elem.find('input[name="path-downloaded"]').val(),
-            };
-
-            downloadedCourses.push(course);
-            addDownloadHistory(course.id, completed, course.encryptedVideos, course.selectedSubtitle, course.pathDownloaded);
-        });
-
-        Settings.downloadedCourses = downloadedCourses;
+    function getProgress($progress) {
+        const dataPercent = $progress.attr("data-percent");
+        return parseInt(dataPercent, 10);
     }
-    if (quit) {
+
+    const downloadedCourses = [];
+    const downloads = $(".ui.downloads.section .ui.courses.items .ui.course.item");
+
+    downloads.each((_index, element) => {
+        const $el = $(element);
+        const hasProgress = $el.find(".progress.active").length > 0;
+        const individualProgress = hasProgress ? getProgress($el.find(".download-status .individual.progress")) : 0;
+        const combinedProgress = hasProgress ? getProgress($el.find(".download-status .combined.progress")) : 0;
+        const isCompleted = !hasProgress && $el.attr("course-completed") === "true";
+
+        const courseData = {
+            id: $el.attr("course-id"),
+            url: $el.attr("course-url"),
+            title: $el.find(".coursename").text(),
+            image: $el.find(".image img").attr("src"),
+            individualProgress: Math.min(100, individualProgress),
+            combinedProgress: Math.min(100, combinedProgress),
+            completed: isCompleted,
+            progressStatus: $el.find(".download-status .label").text(),
+            encryptedVideos: $el.find('input[name="encryptedvideos"]').val(),
+            selectedSubtitle: $el.find('input[name="selectedSubtitle"]').val(),
+            pathDownloaded: $el.find('input[name="path-downloaded"]').val(),
+        };
+
+        downloadedCourses.push(courseData);
+        addDownloadHistory(
+            courseData.id,
+            courseData.completed,
+            courseData.encryptedVideos,
+            courseData.selectedSubtitle,
+            courseData.pathDownloaded
+        );
+    });
+
+    Settings.downloadedCourses = downloadedCourses;
+
+    if (shouldQuitApp) {
         ipcRenderer.send("quitApp");
     }
 }
 
 function removeCurseDownloads(courseId) {
-    var $downloads = $(".ui.downloads.section .ui.courses.items .ui.course.item").slice(0);
+    const $downloads = $(".ui.downloads.section .ui.courses.items .ui.course.item"); //.slice(0);
 
-    if ($downloads.length) {
-        $downloads.each(function (index, elem) {
-            $elem = $(elem);
-            if ($elem.attr("course-id") == courseId) {
-                $elem.remove();
-            }
-        });
-    }
+    $downloads.each((_index, element) => {
+        const $el = $(element);
+        if ($el.attr("course-id") == courseId) {
+            $el.remove();
+        }
+    });
+
 }
 
 function sendNotification(pathCourse, courseName, urlImage = null) {
@@ -1979,9 +1975,9 @@ function saveLogFile() {
         });
 }
 
-function showAlert(title, message) {
-    if (title) title = `.:: ${title} ::.\n\n\r`;
-    prompt.alert(`${title}${message}`);
+function showAlert(message, title = "") {
+    if (title) title = `.:: ${title} ::.\n\r`;
+    dialogs.alert(`${title}${message}`);
 }
 
 function captureException(exception) {
@@ -2000,3 +1996,5 @@ process.on("unhandledRejection", (error) => {
 
 // console.table(getAllDownloadsHistory());
 checkLogin();
+
+console.log(sanitize("App Started? Então o que devo fazer?", { replacement: (s) => "? ".indexOf(s) > -1 ? "" : "-", }).trim());

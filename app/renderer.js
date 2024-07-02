@@ -1,7 +1,7 @@
 "use strict"
 
 const Sentry = require('@sentry/electron');
-const Settings = require('./js/settings.js')
+const Gettings = require('./js/settings.js')
 const { version: appVersion, vars: pkgVars } = require('../package.json');
 
 let featToggle = {};
@@ -19,7 +19,7 @@ const localeMeta = require("./locale/meta.json");
 let localeJson;
 
 function translate(text) {
-    const language = Settings.language;
+    const language = Gettings.language;
 
     if (language == "English") {
         return text;

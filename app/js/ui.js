@@ -1,7 +1,16 @@
 "use strict"
 
 const ui = {
-    dimmerLogin: (isActive) => {
+    navSidebar(tab, tabName) {
+        $(".content .ui.section").hide();
+        $(`.content .ui.${tabName}.section`).show();
+        $(tab).parent(".sidebar").find(".active").removeClass("active purple");
+        $(tab).addClass("active purple");
+    },
+    busyOff: () => {
+        $(".ui.dimmer").removeClass("active");
+    },
+    busyLogin: (isActive) => {
         const $busyDimmer = $(".ui.login.dimmer");
         if (isActive) {
             $busyDimmer.addClass("active");
@@ -9,7 +18,7 @@ const ui = {
             $busyDimmer.removeClass("active");
         }
     },
-    dimmerLogout: (isActive) => {
+    busyLogout: (isActive) => {
         const $busyDimmer = $(".ui.logout.dimmer");
         if (isActive) {
             $busyDimmer.addClass("active");
@@ -17,7 +26,7 @@ const ui = {
             $busyDimmer.removeClass("active");
         }
     },
-    dimmerCheckUpdate: (isActive) => {
+    busyCheckUpdate: (isActive) => {
         const $busyDimmer = $(".ui.dashboard .about.dimmer");
         if (isActive) {
             $busyDimmer.addClass("active");
@@ -25,7 +34,7 @@ const ui = {
             $busyDimmer.removeClass("active");
         }
     },
-    dimmerLoadCourses: (isActive) => {
+    busyLoadCourses: (isActive) => {
         const $busyDimmer = $(".ui.dashboard .courses.dimmer");
         if (isActive) {
             $busyDimmer.addClass("active");
@@ -33,7 +42,7 @@ const ui = {
             $busyDimmer.removeClass("active");
         }
     },
-    dimmerPrepareDownload: (isActive) => {
+    busyPrepareDownload: (isActive) => {
         const $busyDimmer = $(".ui.dashboard .course.dimmer");
         if (isActive) {
             $busyDimmer.addClass("active");
@@ -41,7 +50,7 @@ const ui = {
             $busyDimmer.removeClass("active");
         }
     },
-    dimmerDownloads: (isActive) => {
+    busyLoadDownloads: (isActive) => {
         const $busyDimmer = $(".ui.dashboard .downloads.dimmer");
         if (isActive) {
             $busyDimmer.addClass("active");

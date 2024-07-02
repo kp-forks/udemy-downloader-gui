@@ -1,3 +1,51 @@
+/**
+ * @typedef {Enumerator} DownloadTypeSetting
+ * @property {number} Both
+ * @property {number} OnlyLectures
+ * @property {number} OnlyAttachments
+*/
+
+/**
+ * @typedef {Object} DownloadSetting
+ * @property {boolean} checkNewVersion
+ * @property {string} defaultSubtitle
+ * @property {string} path
+ * @property {boolean} autoStartDownload
+ * @property {boolean} continueDonwloadingEncrypted
+ * @property {boolean} enableDownloadStartEnd
+ * @property {number} downloadStart
+ * @property {boolean} downloadEnd
+ * @property {string} videoQuality
+ * @property {DownloadTypeSetting} type
+ * @property {boolean} skipSubtitles
+ * @property {boolean} seqZeroLeft
+ * @property {boolean} autoRetry
+ */
+
+/**
+ * @typedef {Object} DownloadHistory
+ * @property {number} id
+ * @property {boolean} completed
+ * @property {string} date
+ * @property {number} encryptedVideos
+ * @property {string} selectedSubtitle
+ * @property {string} pathDownloaded
+ */
+
+/**
+ * @typedef {Object} DownloadedCourses
+ * @property {number} id
+ * @property {string} url
+ * @property {string} title
+ * @property {string} image
+ * @property {number} individualProgress
+ * @property {number} combinedProgress
+ * @property {boolean} completed
+ * @property {string} progressStatus
+ * @property {number} encryptedVideos
+ * @property {string} selectedSubtitle
+ * @property {string} pathDownloaded
+ */
 
 const Settings = (() => {
     "use strict"
@@ -6,25 +54,27 @@ const Settings = (() => {
     const path = require("path");
     const { homedir } = require("os");
 
+    /** @type {DownloadTypeSetting} */
     const DownloadType = Object.freeze({
         Both: 0,
         OnlyLectures: 1,
         OnlyAttachments: 2
     });
 
+    /** @type {DownloadSetting} */
     const DownloadDefaultOptions = Object.freeze({
         checkNewVersion: true,
+        defaultSubtitle: undefined,
+        path: path.join(homedir(), "Downloads", "Udeler"),
         autoStartDownload: false,
         continueDonwloadingEncrypted: false,
         enableDownloadStartEnd: false,
+        downloadStart: 0,
+        downloadEnd: 0,
         type: DownloadType.Both,
         skipSubtitles: false,
         autoRetry: false,
-        downloadStart: 0,
-        downloadEnd: 0,
         videoQuality: "Auto",
-        path: path.join(homedir(), "Downloads", "Udeler"),
-        defaultSubtitle: undefined,
         seqZeroLeft: false,
     });
 
@@ -139,27 +189,27 @@ const Settings = (() => {
         set subscriber(value) {
             this.set("subscriber", value);
         },
-        /** @type {Object} */
+        /** @type {DownloadSetting} */
         get download() {
             return this.get("download");
         },
-        /** @type {Object} */
+        /** @type {DownloadSetting} */
         set download(value) {
             this.set("download", value);
         },
-        /** @type {Object} */
+        /** @type {DownloadHistory} */
         get downloadHistory() {
             return this.get("downloadedHistory");
         },
-        /** @type {Object} */
+        /** @type {DownloadHistory} */
         set downloadHistory(value) {
             this.set("downloadedHistory", value);
         },
-        /** @type {Object} */
+        /** @type {DownloadedCourses} */
         get downloadedCourses() {
             return this.get("downloadedCourses");
         },
-        /** @type {Object} */
+        /** @type {DownloadedCourses} */
         set downloadedCourses(value) {
             this.set("downloadedCourses", value);
         },
