@@ -28,7 +28,8 @@
     "build:w32": "electron-builder -w \"--ia32\"",
     "deploy": "node ./cmd/modules/release/index.js",
     "prebuild:local": "node ./cmd/prebuild.js",
-    "build:local": "npm run build && npm run build:w32"
+    "build:local": "npm run build && npm run build:w32",
+    "sync:locales": "node ./sync-locales.js"
   },
   "dependencies": {
     "@sentry/electron": "4.24.0",
