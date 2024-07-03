@@ -1,7 +1,7 @@
 "use strict"
 
 const Sentry = require('@sentry/electron');
-const Gettings = require('./js/settings.js')
+const Gettings = require('./helpers/settings.js')
 const { version: appVersion, vars: pkgVars } = require('../package.json');
 
 let featToggle = {};

@@ -199,7 +199,7 @@ const Settings = (() => {
         },
         /** @type {DownloadHistory} */
         get downloadHistory() {
-            return this.get("downloadedHistory");
+            return this.get("downloadedHistory", []);
         },
         /** @type {DownloadHistory} */
         set downloadHistory(value) {
