@@ -9,48 +9,57 @@ const BRIGHT_GREEN = "\x1b[32m";
 const BRIGHT_BLUE = "\x1b[34m";
 const BRIGHT_GRAY = "\x1b[90m";
 
-// Função para atualizar os arquivos JSON com base no template.json
-function update(filename) {
+
+function areKeyOrdersDifferent(obj1, obj2) {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    return keys1.length !== keys2.length || keys1.join('') !== keys2.join('');
+}
+
+function updateLocaleFile(localeFile) {
     const templatePath = path.join(DIR_LOCALES, 'template.json');
-    const filePath = path.join(DIR_LOCALES, filename);
+    const localeFilePath = path.join(DIR_LOCALES, localeFile);
 
-    // Lê o arquivo template.json
     const templateData = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+    const localeData = JSON.parse(fs.readFileSync(localeFilePath, 'utf8'));
 
-    // Lê o arquivo JSON específico
-    const koData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-
-    const outDict = {};
-    let isUpdated = false;
-
+    const updatedLocaleData = {};
+    
+    let hasUpdated = false;
     for (const key in templateData) {
-        if (koData.hasOwnProperty(key)) {
-            outDict[key] = koData[key];
+        if (localeData.hasOwnProperty(key)) {
+            updatedLocaleData[key] = localeData[key];
         } else {
-            outDict[key] = templateData[key];
-            isUpdated = true;
+            updatedLocaleData[key] = templateData[key];
+            hasUpdated = true;
         }
     }
 
-    // Verifica se houve alguma atualização necessária
-    if (isUpdated) {
-        console.log(`${BRIGHT_GREEN}Updating ${filename}${RESET}`);
-        fs.writeFileSync(filePath, JSON.stringify(outDict, null, 2), 'utf8');
-    } else {
-        console.log(`${BRIGHT_GRAY}Skipping ${filename}: already synchronized${RESET}`);
+    if (!hasUpdated) {
+        //compare updatedLocalData vs localeData
+        hasUpdated = areKeyOrdersDifferent(updatedLocaleData, localeData);
     }
+
+    if (hasUpdated) {
+        fs.writeFileSync(localeFilePath, JSON.stringify(updatedLocaleData, null, 2), 'utf8');
+    }
+    return hasUpdated;
 }
 
-// Função principal
+// Main function to sync locales
 (function main() {
     const files = fs.readdirSync(DIR_LOCALES);
     console.log(`${BRIGHT_BLUE}Starting Sync Locales...${RESET}`);
     console.log(`${BRIGHT_BLUE}Searching for files in ${DIR_LOCALES}${RESET}`);
     console.log(`${BRIGHT_BLUE}Found ${files.length} files in ${DIR_LOCALES}${RESET}`);
 
-    files.forEach((filename) => {
-        if (filename.endsWith('.json') && filename !== 'template.json' && filename !== 'meta.json') {
-            update(filename);
+    files.forEach((file) => {
+        if (file.endsWith('.json') && file !== 'template.json' && file !== 'meta.json') {
+            if (updateLocaleFile(file))
+                console.log(`${BRIGHT_GREEN}Updating ${file}${RESET}`);
+            else
+                console.log(`${BRIGHT_GRAY}Skipping ${file}: already synchronized${RESET}`);
         }
     });
 })();
