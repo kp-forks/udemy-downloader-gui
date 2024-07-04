@@ -197,19 +197,19 @@ const Settings = (() => {
         set download(value) {
             this.set("download", value);
         },
-        /** @type {DownloadHistory} */
+        /** @type {Array<DownloadHistory>} */
         get downloadHistory() {
             return this.get("downloadedHistory", []);
         },
-        /** @type {DownloadHistory} */
+        /** @type {Array<DownloadHistory>} */
         set downloadHistory(value) {
             this.set("downloadedHistory", value);
         },
-        /** @type {DownloadedCourses} */
+        /** @type {Array<DownloadedCourses>} */
         get downloadedCourses() {
             return this.get("downloadedCourses");
         },
-        /** @type {DownloadedCourses} */
+        /** @type {Array<DownloadedCourses>} */
         set downloadedCourses(value) {
             this.set("downloadedCourses", value);
         },
