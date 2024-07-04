@@ -8,7 +8,7 @@ const ui = {
         $(tab).addClass("active purple");
     },
     busyOff: () => {
-        $(".ui.dimmer").removeClass("active");
+        $(".ui .dimmer").removeClass("active");
     },
     busy: (isActive, text) => {
         const $busyDimmer = $(".ui.dashboard .dimmer");
@@ -36,7 +36,7 @@ const ui = {
     busyLoadCourses: (isActive) => {
         ui.busy(isActive, translate("Loading Courses"));
     },
-    busyPrepareDownload: (isActive) => {
+    busyBuildCourseData: (isActive) => {
         ui.busy(isActive, translate("Getting Info"));
     },
     busyLoadDownloads: (isActive) => {

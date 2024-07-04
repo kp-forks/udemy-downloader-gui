@@ -138,6 +138,12 @@ const utils = {
     sleep: (ms) => {
         return new Promise((resolve) => setTimeout(resolve, ms));
     },
+    newError(name, message = "") {
+        const error = new Error();
+        error.name = name;
+        error.message = message;
+        return error;
+    }
 }
 
 module.exports = utils;
