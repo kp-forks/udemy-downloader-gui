@@ -36,7 +36,7 @@ const ui = {
     busyLoadCourses: (isActive) => {
         ui.busy(isActive, translate("Loading Courses"));
     },
-    busyBuildCourseData: (isActive) => {
+    busyBuildingCourseData: (isActive) => {
         ui.busy(isActive, translate("Getting Info"));
     },
     busyLoadDownloads: (isActive) => {
@@ -95,7 +95,7 @@ const ui = {
             </div>
             <div class="info-downloaded"></div>`;
     },
-    prepareDownload: ($courseCard) => {
+    prepareDownloading: ($courseCard) => {
         $courseCard.find(".download-quality").html("").hide();
         $courseCard.find(".download-speed").hide();
         $courseCard.find(".combined.progress").progress("reset");
@@ -109,20 +109,11 @@ const ui = {
         $courseCard.find(".ui.tiny.image .tooltip").hide();
         $courseCard.find(".ui.tiny.image").removeClass("wrapper");
         $courseCard.find('input[name="encryptedvideos"]').val(0);
-        $courseCard.css("padding-bottom", "25px")
+        // $courseCard.css("padding-bottom", "25px")
     },
     showProgress: ($courseCard, shouldShow) => {
         const $progressElement = $courseCard.find(".ui.progress");
         shouldShow ? $progressElement.show() : $progressElement.hide();
-    },
-    enableDownloadButton: ($courseCard, isEnabled) => {
-        const $downloadButton = $courseCard.find(".download.button");
-        // $downloadButton.toggleClass("disabled", !isEnabled);
-        if (isEnabled) {
-            $downloadButton.removeClass("disabled");
-        } else {
-            $downloadButton.addClass("disabled");
-        }
     },
 
 };

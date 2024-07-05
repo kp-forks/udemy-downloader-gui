@@ -143,6 +143,20 @@ const utils = {
         error.name = name;
         error.message = message;
         return error;
+    },
+    /**
+     * Returns the value in the given object that is closest to the target value.
+     *
+     * @param {Object} obj - The object containing the values to compare.
+     * @param {number} target - The target value to find the closest match for.
+     * @return {*} The value in the object that is closest to the target value.
+     */
+    getClosestValue(obj, target) {
+        const keys = Object.keys(obj).map(Number); // Converte as chaves para números
+        const closestKey = keys.reduce((prev, curr) => 
+            Math.abs(curr - target) < Math.abs(prev - target) ? curr : prev
+        );
+        return obj[closestKey];
     }
 }
 
