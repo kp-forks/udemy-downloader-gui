@@ -46,7 +46,8 @@ class UdemyService {
                 const stream_urls = asset.stream_urls?.Video || asset.media_sources;
                 const isEncrypted = Boolean(asset.media_license_token);
                 if (stream_urls) {
-                    const streams = await this._convertToStreams(stream_urls, isEncrypted);
+                    console.log(`Preparing streams for asset id: ${asset.id}`);
+                    const streams = await this._convertToStreams(stream_urls, isEncrypted, asset.title );
 
                     delete el.asset.stream_urls;
                     delete el.asset.media_sources;
@@ -61,11 +62,9 @@ class UdemyService {
     async _prepareStreamsSource(items) {
         console.log("Preparing stream urls...", items);
         try {
-            const promises = items.map(async el => {
-                await this._prepareStreamSource(el);
-            });
-
+            const promises = items.map(el => this._prepareStreamSource(el));
             await Promise.all(promises);
+            console.log("All streams prepared");
         } catch (error) {
             throw this._error("EPREPARE_STREAMS_SOURCE", error.message);
         }
@@ -83,7 +82,7 @@ class UdemyService {
      *  sources: { [key: string]: { type: string, url: string } }
      * }>} - The transformed media sources.
      */
-    async _convertToStreams(streamUrls, isEncrypted) {
+    async _convertToStreams(streamUrls, isEncrypted, title="") {
         try {
             if (!streamUrls) {
                 throw this._error("ENO_STREAMS", "No streams found to convert");
@@ -117,31 +116,52 @@ class UdemyService {
                             }
                         }
                     } else {
+                        // auto
                         if (!isEncrypted) {
                             const m3u8 = new M3U8Service(url);
-                            await m3u8.loadPlaylist();
+                            console.log('Before loading playlist');
+                            const playlist = await m3u8.loadPlaylist();
+                            console.log('After loading playlist', playlist);
 
-                            const lowest = m3u8.getLowestQuality();
-                            const highest = m3u8.getHighestQuality();
+                            for (const item of playlist) {
+                                console.log(`for of playlist ${title}`, item);
+                                const numericQuality = item.quality;
 
-                            if (!isNaN(lowest.quality) && lowest.quality < minQuality) {
-                                minQuality = lowest.quality;
-                                sources[minQuality.toString()] = { type, url: lowest.url }
+                                if (numericQuality < minQuality) {
+                                    minQuality = numericQuality;
+                                }
+                                if (numericQuality > maxQuality) {
+                                    maxQuality = numericQuality;
+                                }
+                                if (!sources[numericQuality.toString()]) {
+                                    sources[numericQuality.toString()] = { type, url: item.url }
+                                }
                             }
-                            if (!isNaN(highest.quality) && highest.quality > maxQuality) {
-                                maxQuality = highest.quality;
-                                sources[maxQuality.toString()] = { type, url: highest.url }
-                            }
+
+                            // playlist.forEach(item => {
+                                // const numericQuality = item.quality;
+
+                                // if (numericQuality < minQuality) {
+                                //     minQuality = numericQuality;
+                                // }
+                                // if (numericQuality > maxQuality) {
+                                //     maxQuality = numericQuality;
+                                // }
+                                // if (!sources[numericQuality.toString()]) {
+                                //     sources[numericQuality.toString()] = { type, url: item.url }
+                                // }
+                            // });
                         }
                     }
                 }
             });
 
             await Promise.all(promises);
+            console.log(`All stream urls converted for assetName: ${title}`);	
 
             return {
-                minQuality: minQuality === Number.MAX_SAFE_INTEGER ? "auto" : minQuality,
-                maxQuality: maxQuality === Number.MIN_SAFE_INTEGER ? "auto" : maxQuality,
+                minQuality: minQuality === Number.MAX_SAFE_INTEGER ? "auto" : minQuality.toString(),
+                maxQuality: maxQuality === Number.MIN_SAFE_INTEGER ? "auto" : maxQuality.toString(),
                 isEncrypted,
                 sources
             };
@@ -165,6 +185,32 @@ class UdemyService {
             const response = await axios({
                 url,
                 method,
+                headers: this.#headerAuth,
+                timeout: this.#timeout,
+            });
+
+            // Armazene o resultado no cache
+            this.#cache.set(url, response.data);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching URL: ${url}`, error);
+            throw error;
+        }
+    }
+
+    async fetchLoadMore(url, httpTimeout = this.#timeout) {
+        // Verifique o cache antes de fazer a requisição
+        const cachedData = this.#cache.get(url);
+        if (cachedData) {
+            console.log(`Cache hit: ${url}`);
+            return cachedData;
+        }
+
+        console.log(`Fetching URL: ${url}`);
+        try {
+            const response = await axios({
+                url,
+                method: "GET",
                 headers: this.#headerAuth,
                 timeout: this.#timeout,
             });

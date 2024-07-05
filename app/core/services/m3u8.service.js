@@ -118,6 +118,7 @@ class M3U8Service {
                 throw new Error('Invalid M3U8 playlist content');
             }
             this._playlist = this._extractUrlsAndQualities(playlistContent);
+            return this._playlist;
         } catch (error) {
             throw error;
         }
