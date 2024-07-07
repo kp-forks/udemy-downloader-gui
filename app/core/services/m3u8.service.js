@@ -119,8 +119,8 @@ class M3U8Service {
             }
             this._playlist = this._extractUrlsAndQualities(playlistContent);
             return this._playlist;
-        } catch (error) {
-            throw error;
+        } catch (e) {
+            throw e;
         }
     }
 

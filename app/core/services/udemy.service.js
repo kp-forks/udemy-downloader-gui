@@ -47,7 +47,7 @@ class UdemyService {
                 const isEncrypted = Boolean(asset.media_license_token);
                 if (stream_urls) {
                     console.log(`Preparing streams for asset id: ${asset.id}`);
-                    const streams = await this._convertToStreams(stream_urls, isEncrypted, asset.title );
+                    const streams = await this._convertToStreams(stream_urls, isEncrypted, asset.title);
 
                     delete el.asset.stream_urls;
                     delete el.asset.media_sources;
@@ -72,17 +72,17 @@ class UdemyService {
 
     /**
      * Transforms media sources into a standardized format.
-     * 
+     *
      * @param {Array<Object>} streamUrls - The array of stream URLs.
      * @param {boolean} isEncrypted - Indicates if the media is encrypted.
      * @returns {Promise<{
-     *  minQuality: string, 
-     *  maxQuality: string, 
+     *  minQuality: string,
+     *  maxQuality: string,
      *  isEncrypted: boolean
      *  sources: { [key: string]: { type: string, url: string } }
      * }>} - The transformed media sources.
      */
-    async _convertToStreams(streamUrls, isEncrypted, title="") {
+    async _convertToStreams(streamUrls, isEncrypted, title = "") {
         try {
             if (!streamUrls) {
                 throw this._error("ENO_STREAMS", "No streams found to convert");
@@ -139,17 +139,17 @@ class UdemyService {
                             }
 
                             // playlist.forEach(item => {
-                                // const numericQuality = item.quality;
+                            // const numericQuality = item.quality;
 
-                                // if (numericQuality < minQuality) {
-                                //     minQuality = numericQuality;
-                                // }
-                                // if (numericQuality > maxQuality) {
-                                //     maxQuality = numericQuality;
-                                // }
-                                // if (!sources[numericQuality.toString()]) {
-                                //     sources[numericQuality.toString()] = { type, url: item.url }
-                                // }
+                            // if (numericQuality < minQuality) {
+                            //     minQuality = numericQuality;
+                            // }
+                            // if (numericQuality > maxQuality) {
+                            //     maxQuality = numericQuality;
+                            // }
+                            // if (!sources[numericQuality.toString()]) {
+                            //     sources[numericQuality.toString()] = { type, url: item.url }
+                            // }
                             // });
                         }
                     }
@@ -157,7 +157,7 @@ class UdemyService {
             });
 
             await Promise.all(promises);
-            console.log(`All stream urls converted for assetName: ${title}`);	
+            console.log(`All stream urls converted for assetName: ${title}`);
 
             return {
                 minQuality: minQuality === Number.MAX_SAFE_INTEGER ? "auto" : minQuality.toString(),
@@ -192,9 +192,9 @@ class UdemyService {
             // Armazene o resultado no cache
             this.#cache.set(url, response.data);
             return response.data;
-        } catch (error) {
-            console.error(`Error fetching URL: ${url}`, error);
-            throw error;
+        } catch (e) {
+            console.error(`Error fetching URL: ${url}`, e);
+            throw e;
         }
     }
 
@@ -218,9 +218,9 @@ class UdemyService {
             // Armazene o resultado no cache
             this.#cache.set(url, response.data);
             return response.data;
-        } catch (error) {
-            console.error(`Error fetching URL: ${url}`, error);
-            throw error;
+        } catch (e) {
+            console.error(`Error fetching URL: ${url}`, e);
+            throw e;
         }
     }
 
@@ -288,12 +288,13 @@ class UdemyService {
     * Fetches the course content for a given course ID and content type.
     *
     * @param {number} courseId - The ID of the course.
-    * @param {'less' | 'all' | 'lectures' | 'attachments'} [contentType='less'] - The type of content to fetch.
+    * @param {'less' | 'all' | 'lectures' | 'attachments'} [contentType='all'] - The type of content to fetch.
     * @return {Promise<any>} - The course content data.
     */
-    async fetchCourseContent(courseId, contentType = "less" | "all" | "lectures" | "attachments", httpTimeout = this.#timeout) {
+    async fetchCourseContent(courseId, contentType, httpTimeout = this.#timeout) {
         let url = `/courses/${courseId}/cached-subscriber-curriculum-items?page_size=10000`
 
+        contentType = (contentType || "less").toLowerCase();
         if (contentType !== "less") url += "&fields[lecture]=id,title";
         if (contentType === "all") url += ",asset,supplementary_assets";
         if (contentType === "lectures") url += ",asset";

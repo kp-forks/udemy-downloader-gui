@@ -21,7 +21,6 @@ const MSG_DRM_PROTECTED = translate("Contains DRM protection and cannot be downl
 const HTTP_TIMEOUT = 40000; // 40 segundos
 
 const loggers = [];
-
 let repoAccount = "heliomarpm";
 let udemyService;
 
@@ -630,8 +629,8 @@ async function renderDownloads() {
         // Executa todas as Promessas em paralelo
         Promise.all(promises)
             .then(() => ui.busyLoadDownloads(false))
-            .catch(error => {
-                console.error("Error adding courses:", error);
+            .catch(e => {
+                console.error("Error adding courses:", e);
                 ui.busyLoadDownloads(false);
             });
 
@@ -793,32 +792,15 @@ async function fetchCourses(isSubscriber) {
             renderDownloads();
         }
     })
-    .catch(error => {
-        const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
-        appendLog(`EFETCHING_COURSES: ${error.code}(${statusCode})`, error.message);
+    .catch(e => {
+        const statusCode = (e.response?.status || 0).toString() + (e.code ? ` :${e.code}` : "");
+        appendLog(`EFETCHING_COURSES: ${e.code}(${statusCode})`, e.message);
         //showAlert(error.message, "Fetching Courses");
-        throw utils.newError("EFETCHING_COURSES", error.message);
+        throw utils.newError("EFETCHING_COURSES", e.message);
     })
     .finally(() => {
         ui.busyLoadCourses(false);
     });
-    return;
-
-
-    try {
-        const courses = await udemyService.fetchCourses(PAGE_SIZE, isSubscriber);
-        console.log("fetch courses", courses);
-        renderCourses(courses);
-        if (Settings.downloadedCourses) {
-            renderDownloads();
-        }
-
-    } catch (error) {
-        appendLog("Error Fetching Courses", error);
-        showAlert(error.message, "Fetching Courses");
-    } finally {
-        ui.busyLoadCourses(false);
-    }
 }
 
 function loadMore(loadMoreButton) {
@@ -835,9 +817,9 @@ function loadMore(loadMoreButton) {
         } else {
             $button.data("url", resp.next);
         }
-    }).catch(error => {
-        const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
-        appendLog(`loadMore_Error: (${statusCode})`, error);
+    }).catch(e => {
+        const statusCode = (e.response?.status || 0).toString() + (e.code ? ` :${e.code}` : "");
+        appendLog(`loadMore_Error: (${statusCode})`, e);
     }).finally(() => {
         ui.busyLoadCourses(false);
     });
@@ -1130,9 +1112,8 @@ function startDownload($course, courseData, subTitle = "") {
     $downloadQuality.show();
 
     function stopDownload(isEncryptedVideo) {
-        if (downloader) {
-            const dl = downloader._downloads[downloader._downloads.length - 1];
-            dl.stop();
+        if (downloader.downloads?.length) {
+            downloader._downloads[downloader._downloads.length - 1].stop();
             $pauseButton.addClass("disabled");
             $resumeButton.removeClass("disabled");
 
@@ -1143,10 +1124,8 @@ function startDownload($course, courseData, subTitle = "") {
     }
 
     function resumeDownload() {
-        if (downloader) {
-            const dl = downloader._downloads[downloader._downloads.length - 1];
-            dl.resume();
-
+        if (downloader._downloads?.length) {
+            downloader._downloads[downloader._downloads.length - 1].resume();
             $pauseButton.removeClass("disabled");
             $resumeButton.addClass("disabled");
         }
@@ -1258,7 +1237,7 @@ function startDownload($course, courseData, subTitle = "") {
                             if (dl.status === -1 && dl.stats.total.size == 0 && fs.existsSync(dl.filePath)) {
                                 dl.emit("end");
                                 clearInterval(timerDownloader);
-                            } else if (dl.status === -1) {                                
+                            } else if (dl.status === -1) {
                                 appendLog("Download error, retrying... ", { url: dl.url } )
                                 axios({
                                     timeout: HTTP_TIMEOUT,
@@ -1456,7 +1435,7 @@ function startDownload($course, courseData, subTitle = "") {
                 let download_this_sub = availables[0] || Object.keys(subtitles)[0] || "";
                 // Prefer non "[Auto]" subs (likely entered by the creator of the lecture.)
                 if (availables.length > 1) {
-                    for (const key in availables) {
+                    for (const key of availables) {
                         if (availables[key].indexOf("[Auto]") == -1 || availables[key].indexOf(`[${translate("Auto")}]`) == -1) {
                             download_this_sub = availables[key];
                             break;
@@ -1590,15 +1569,15 @@ function startDownload($course, courseData, subTitle = "") {
                 );
 
                 // $lecture_name.html(`${courseData["chapters"][chapterIndex].name}\\${lectureName}`);
-                const skipLecture = Number(Settings.download.type) === Settings.DownloadType.OnlyAttachments;
+                const skipLecture = (Settings.download.type == Settings.DownloadType.OnlyAttachments);
 
-                if (lectureType !== "application/x-mpegURL") {
+                if (lectureType !== "application/x-mpegurl") {
 
                     if (fs.existsSync(seqName.fullPath) || skipLecture) {
                         endDownloadAttachment();
                         return;
                     }
-                    
+
                     if (fs.existsSync(seqName.fullPath + ".mtd") && !fs.statSync(seqName.fullPath + ".mtd").size) {
                         fs.unlinkSync(seqName.fullPath + ".mtd");
                     }
@@ -1607,7 +1586,7 @@ function startDownload($course, courseData, subTitle = "") {
                         appendLog("Video Encrypted", `Chapter: ${chapterName}\nLecture: ${lectureName}`);
                     }
                     else {
-                        if (fs.existsSync(seqName.fullPath + ".mtd") && !skipLecture) {
+                        if (fs.existsSync(seqName.fullPath + ".mtd")) {
                             var dl = downloader.resumeDownload(seqName.fullPath);
                         } else {
                             var dl = downloader.download(lectureData.src, seqName.fullPath);
@@ -1774,7 +1753,7 @@ function sendNotification(pathCourse, courseName, urlImage = null) {
 }
 
 function clearLogArea() {
-    loggers = [];
+    loggers.length = 0;
     $(".ui.logger.section .ui.list").html("");
     clearBagdeLoggers();
 }
@@ -1784,9 +1763,15 @@ function clearBagdeLoggers() {
     $("#badge-logger").hide();
 }
 
-function appendLog(title, error = "" | Error) {    
-    const description = error instanceof Error 
-    ? error.message 
+/**
+ * Function to append a log entry with the specified title and error.
+ *
+ * @param {string} title - The title of the log entry.
+ * @param {string|Error|object} error - The error message or Error object.
+ */
+function appendLog(title, error) {
+    const description = error instanceof Error
+    ? error.message
     : (typeof error == "object" ? JSON.stringify(error): error);
 
     // item added to list to display
