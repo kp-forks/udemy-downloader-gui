@@ -112,16 +112,12 @@ class M3U8Service {
      * @throws {Error} - If the playlist fails to load after multiple attempts.
      */
     async loadPlaylist(maxRetries = 3) {
-        try {
-            const playlistContent = await M3U8Service.getFile(this._m3u8Url, false, maxRetries);
-            if (!this._isValidM3U8Content(playlistContent)) {
-                throw new Error('Invalid M3U8 playlist content');
-            }
-            this._playlist = this._extractUrlsAndQualities(playlistContent);
-            return this._playlist;
-        } catch (e) {
-            throw e;
+        const playlistContent = await M3U8Service.getFile(this._m3u8Url, false, maxRetries);
+        if (!this._isValidM3U8Content(playlistContent)) {
+            throw new Error('Invalid M3U8 playlist content');
         }
+        this._playlist = this._extractUrlsAndQualities(playlistContent);
+        return this._playlist;
     }
 
     /**
