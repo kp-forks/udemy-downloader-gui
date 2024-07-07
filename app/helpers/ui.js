@@ -108,13 +108,25 @@ const ui = {
         $courseCard.find(".icon-encrypted").hide();
         $courseCard.find(".ui.tiny.image .tooltip").hide();
         $courseCard.find(".ui.tiny.image").removeClass("wrapper");
-        $courseCard.find('input[name="encryptedvideos"]').val(0);
+        // $courseCard.find('input[name="encryptedvideos"]').val(0);
         // $courseCard.css("padding-bottom", "25px")
     },
     showProgress: ($courseCard, shouldShow) => {
         const $progressElement = $courseCard.find(".ui.progress");
         shouldShow ? $progressElement.show() : $progressElement.hide();
     },
+    configureEncryptedIcon($courseCard) {
+        if (Number($courseCard.find("input[name='encryptedvideos']").val()) === 0) {
+            $courseCard.find(".icon-encrypted").hide();
+            $courseCard.find(".ui.tiny.image .tooltip").hide();
+            $courseCard.find(".ui.tiny.image").removeClass("wrapper");
+        } else {
+            $courseCard.find(".icon-encrypted").show();
+            $courseCard.find(".ui.tiny.image .tooltip").show();
+            $courseCard.find(".ui.tiny.image").addClass("wrapper");
+        }
+    }
+
 
 };
 

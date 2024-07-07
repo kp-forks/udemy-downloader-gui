@@ -153,10 +153,10 @@ const utils = {
      */
     getClosestValue(obj, target) {
         const keys = Object.keys(obj).map(Number); // Converte as chaves para números
-        const closestKey = keys.reduce((prev, curr) => 
+        const closestKey = keys.reduce((prev, curr) =>
             Math.abs(curr - target) < Math.abs(prev - target) ? curr : prev
         );
-        return obj[closestKey];
+        return {key: closestKey, value: obj[closestKey]};
     }
 }
 
