@@ -121,6 +121,12 @@ npm run make:release
 
 > **Note**: Script for make release is contribution by @daltonmenezes
 
+## [![Repography logo](https://images.repography.com/logo.svg)](https://repography.com) / Recent activity [![Time period](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_badge.svg)](https://repography.com)
+[![Timeline graph](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_timeline.svg)](https://github.com/heliomarpm/udemy-downloader-gui/commits)
+[![Issue status graph](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_issues.svg)](https://github.com/heliomarpm/udemy-downloader-gui/issues)
+[![Trending topics](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_words.svg)](https://github.com/heliomarpm/udemy-downloader-gui/commits)
+[![Top contributors](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_users.svg)](https://github.com/heliomarpm/udemy-downloader-gui/graphs/contributors)
+
 
 # Contributing:
 
