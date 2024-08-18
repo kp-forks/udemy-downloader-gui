@@ -97,5 +97,6 @@
   "Note: When the selected option is not available in the Udemy API, the highest quality available will be downloaded.": "ማስታወሻ፡ የተመረጠው አማራጭ በUdemy API ውስጥ በማይገኝበት ጊዜ፣ የተገኘው ከፍተኛ ጥራት ይወርዳል።",
   "How to get an Access Token": "ማለፊያ እንዴት ማግኘት እንደሚቻል",
   "Subscriber Account": "የተመዝጋቢ አካውንት",
-  "Saving download history": ""
+  "Saving download history": "",
+  "Service is temporarily unavailable. Please wait a few minutes and try again.": ""
 }

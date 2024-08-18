@@ -97,5 +97,6 @@
   "Note: When the selected option is not available in the Udemy API, the highest quality available will be downloaded.": "Nota: Quando a opção selecionada não está disponível na API da Udemy, a qualidade mais alta disponível será baixada.",
   "How to get an Access Token": "Como obter o Access Token",
   "Subscriber Account": "Conta de Assinante",
-  "Saving download history": "Salvando histórico de downloads"
+  "Saving download history": "Salvando histórico de downloads",
+  "Service is temporarily unavailable. Please wait a few minutes and try again.": "Serviço temporariamente indisponível. Por favor, aguarde alguns minutos e tente novamente."
 }

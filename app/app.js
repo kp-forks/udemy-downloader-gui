@@ -282,7 +282,7 @@ async function checkUpdate(account, silent = false) {
     }
 }
 
-async function checkLogin() {
+async function checkLogin(alertExpired = true) {
     if (Settings.accessToken) {
         try {
             ui.busyLogin(true);
@@ -291,6 +291,9 @@ async function checkLogin() {
             const userContext = await udemyService.fetchProfile(Settings.accessToken, 30000);
 
             if (!userContext.header.isLoggedIn) {
+                if (alertExpired) {
+                    showAlert(translate("Token expired"));
+                }
                 ui.resetToLogin();
                 return;
             }
@@ -516,8 +519,8 @@ function resetCourse($course, $elMessage, autoRetry, courseData, subtitle) {
     } else {
         $course.attr("course-completed", "");
 
-        if ($elMessage.hasClass("download-error")) {
-            if (autoRetry && courseData.errorCount++ < 5) {
+        if ($elMessage.hasClass("download-error") && autoRetry && courseData) {
+            if (courseData.errorCount++ < 5) {
                 $course.length = 1;
                 startDownload($course, courseData, subtitle);
                 return;
@@ -648,7 +651,7 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
             showAlert(`Id: ${courseId}`, translate("Course not found"));
             return null;
         }
-        // console.log("fetchCourseContent", response);
+        console.log(`fetchCourseContent (${courseId})`, response);
 
         const downloadType = Number(Settings.download.type);
         const downloadAttachments = downloadType === Settings.DownloadType.Both || downloadType === Settings.DownloadType.OnlyAttachments;
@@ -672,7 +675,7 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
                 }
                 chapterData = { id: item.id, name: item.title.trim(), lectures: [] };
             }
-            else if (type == "quiz") {
+            else if (type == "quiz" || type == "practice") {
                 const srcUrl = `${courseUrl}t/${item._class}/${item.id}`;
 
                 chapterData.lectures.push({
@@ -765,22 +768,7 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
         // ui.busyBuildingCourseData(false);
         return courseData;
     } catch (error) {
-        let msgError;
-        const statusCode = error.response ? error.response.status : 0;
-        switch (statusCode) {
-            case 403:
-                msgError = translate("You do not have permission to access this course");
-                prompt.alert(msgError);
-                break;
-            case 504:
-                msgError = "Gateway timeout";
-                break;
-            default:
-                msgError = error.message;
-                break;
-        }
-        appendLog(`EBUILDING_COURSE_DATA: ${error.code}(${statusCode})`, msgError);
-        throw utils.newError("EBUILDING_COURSE_DATA", msgError);
+        handleApiError(error, "EBUILDING_COURSE_DATA", courseName, true);
     }
 }
 
@@ -795,10 +783,7 @@ async function fetchCourses(isSubscriber) {
             }
         })
         .catch(e => {
-            const statusCode = (e.response?.status || 0).toString() + (e.code ? ` :${e.code}` : "");
-            appendLog(`EFETCHING_COURSES: ${e.code}(${statusCode})`, e.message);
-            //showAlert(error.message, "Fetching Courses");
-            throw utils.newError("EFETCHING_COURSES", e.message);
+            handleApiError(e, "EFETCHING_COURSES");
         })
         .finally(() => {
             ui.busyLoadCourses(false);
@@ -821,7 +806,7 @@ function loadMore(loadMoreButton) {
             }
         }).catch(e => {
             const statusCode = (e.response?.status || 0).toString() + (e.code ? ` :${e.code}` : "");
-            appendLog(`loadMore_Error: (${statusCode})`, e);
+            appendLog(`ELOADING_MORE: (${statusCode})`, e);
         }).finally(() => {
             ui.busyLoadCourses(false);
         });
@@ -834,8 +819,7 @@ async function search(keyword) {
         const courses = await udemyService.fetchSearchCourses(keyword, PAGE_SIZE, Settings.subscriber);
         renderCourses(courses, !!keyword);
     } catch (error) {
-        const statusCode = (error.response?.status || 0).toString() + (error.code ? ` :${error.code}` : "");
-        appendLog(`search_Error: (${statusCode})`, error);
+        handleApiError(error, "ESEARCHING_COURSES", null, false);
     } finally {
         ui.busyLoadCourses(false);
     }
@@ -984,8 +968,9 @@ async function prepareDownloading($course, subtitle) {
 
     console.clear();
 
+    let courseData = null;
     try {
-        const courseData = await fetchCourseContent(courseId, courseName, courseUrl);
+        courseData = await fetchCourseContent(courseId, courseName, courseUrl);
         if (!courseData) {
             ui.showProgress($course, false);
             return;
@@ -1006,22 +991,11 @@ async function prepareDownloading($course, subtitle) {
         }
 
     } catch (error) {
-        let msgError;
-        const statusCode = error.response?.status || 0;
-        switch (statusCode) {
-            case 403:
-                msgError = translate("You do not have permission to access this course") + `\nId: ${courseId}`;
-                showAlert(msgError, "Download Error");
-                break;
-            case 504:
-                msgError = "Gateway timeout";
-                break;
-            default:
-                msgError = error;
-        }
-        const errorCode = error.code ? ` :${error.code}` : "";
-        appendLog(`EPREPARE_DOWNLOADING: (${statusCode}${errorCode})`, msgError);
+        const errorName = error.name === "EASK_FOR_SUBTITLE" ? error.name : "EPREPARE_DOWNLOADING";
+        handleApiError(error, errorName, null, false);
         ui.busyOff();
+
+        resetCourse($course, $course.find(".download-error"), Settings.download.autoRetry, courseData, subtitle);
     }
 }
 
@@ -1173,9 +1147,7 @@ function startDownload($course, courseData, subTitle = "") {
             fs.mkdirSync(seqName.fullPath, { recursive: true });
             downloadLecture(chapterIndex, lectureIndex, countLectures, seqName.name);
         } catch (error) {
-            appendLog("downloadChapter_Error:", error);
-            dialog.showErrorBox("downloadChapter_Error", error.message);
-
+            handleApiError(error, "EDOWNLOADING_CHAPTER", null, false);
             resetCourse($course, $course.find(".download-error"), false, courseData);
         }
     }
@@ -1266,9 +1238,7 @@ function startDownload($course, courseData, subTitle = "") {
                                 }).then(() => {
                                     resetCourse($course, $course.find(".download-error"), Settings.download.autoRetry, courseData, subtitle);
                                 }).catch((error) => {
-                                    const statusCode = error.response?.status || 0;
-                                    const errorCode = error.code ? ` :${error.code}` : "";
-                                    appendLog(`downloadLecture_Error: (${statusCode}${errorCode})`, error);
+                                    handleApiError(error, "EDL_DOWNLOADING_LECTURE", courseData.name, false);
 
                                     try {
                                         if (statusCode == 401 || statusCode == 403) {
@@ -1296,7 +1266,7 @@ function startDownload($course, courseData, subTitle = "") {
                     if (hasDRMProtection(dl)) {
                         dl.emit("end");
                     } else {
-                        appendLog("errorDownload", dl.error.message);
+                        appendLog("DL_ONERROR", dl.error.message);
                     }
                 });
 
@@ -1779,10 +1749,12 @@ function clearBagdeLoggers() {
  * @param {string} title - The title of the log entry.
  * @param {string|Error|object} error - The error message or Error object.
  */
-function appendLog(title, error) {
-    const description = error instanceof Error
-        ? error.message
+function appendLog(title, error, additionalDescription = "") {
+    let description = error instanceof Error
+        ? error.message //`${error.message}\n ${error.stack}`
         : (typeof error == "object" ? JSON.stringify(error) : error);
+
+    description += additionalDescription !== "" ? "\n\n" + additionalDescription : "";
 
     // item added to list to display
     $(".ui.logger.section .ui.list").prepend(
@@ -1810,6 +1782,7 @@ function appendLog(title, error) {
 
     if (error instanceof Error) {
         console.error(`[${title}] ${error.message}\n ${error.stack}`);
+        captureException(error);
     } else {
         console.warn(`[${title}] ${description}`);
     }
@@ -1846,6 +1819,45 @@ function saveLogFile() {
         });
 }
 
+function handleApiError(error, errorName, courseName = null, triggerThrow = true) {
+    error.name = errorName;
+    error.code = error.code || "";
+
+    const statusCode = error.response?.status || 0;
+    switch (statusCode) {
+        case 403:
+            error.message = translate("You do not have permission to access this course");
+            // prompt.alert(msgError);
+            showAlertError(error.message, errorName);
+            break;
+        case 503:
+            error.message = translate("Service is temporarily unavailable. Please wait a few minutes and try again.");
+            showAlertError(error.message, errorName);
+            break;
+        case 504:
+            error.message = "Gateway timeout";
+            showAlertError(error.message, errorName);
+            break;
+        default:
+            break;
+    }
+
+    if (courseName)
+        error.message += `\n\n course: ${courseName}`;
+
+    appendLog(`${errorName}: ${error.code}(${statusCode})`, error);
+
+    if (triggerThrow) {
+        // throw utils.newError(errorName, error.message);
+        throw error;
+    }
+}
+
+function showAlertError(message, title = "") {
+    title = title ? `.:: ${title} ::.` : ".:: Error ::.";
+    dialog.showErrorBox(title, message);
+}
+
 function showAlert(message, title = "") {
     if (title) title = `.:: ${title} ::.\n\r`;
     dialogs.alert(`${title}${message}`);
@@ -1856,14 +1868,14 @@ function captureException(exception) {
 }
 
 process.on("uncaughtException", (error) => {
-    appendLog("uncaughtException", error);
+    appendLog("EPROCESS_UNCAUGHT_EXCEPTION", error);
     captureException(error);
 });
 
 process.on("unhandledRejection", (error) => {
-    appendLog("unhandledRejection", error);
+    appendLog("EPROCESS_UNHANDLED_REJECTION", error);
     captureException(error);
 });
 
 // console.table(getAllDownloadsHistory());
-checkLogin();
+checkLogin(false);

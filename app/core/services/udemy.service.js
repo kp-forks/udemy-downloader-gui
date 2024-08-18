@@ -41,17 +41,20 @@ class UdemyService {
 
     async _prepareStreamSource(el) {
         try {
-            if (el._class === "lecture" && el.asset?.asset_type.toLowerCase() === "video") {
-                const asset = el.asset;
-                const stream_urls = asset.stream_urls?.Video || asset.media_sources;
-                const isEncrypted = Boolean(asset.media_license_token);
-                if (stream_urls) {
-                    console.log(`Preparing streams for asset id: ${asset.id}`);
-                    const streams = await this._convertToStreams(stream_urls, isEncrypted, asset.title);
+            if (el._class === "lecture") {
+                const assetType = el.asset?.asset_type.toLowerCase();
+                if (assetType === "video" || assetType === "videomashup") {
+                    const asset = el.asset;
+                    const stream_urls = asset.stream_urls?.Video || asset.media_sources;
+                    const isEncrypted = Boolean(asset.media_license_token);
+                    if (stream_urls) {
+                        // console.log(`Preparing streams for asset id: ${asset.id}`);
+                        const streams = await this._convertToStreams(stream_urls, isEncrypted, asset.title);
 
-                    delete el.asset.stream_urls;
-                    delete el.asset.media_sources;
-                    el.asset.streams = streams;
+                        delete el.asset.stream_urls;
+                        delete el.asset.media_sources;
+                        el.asset.streams = streams;
+                    }
                 }
             }
         } catch (error) {
@@ -60,11 +63,11 @@ class UdemyService {
     }
 
     async _prepareStreamsSource(items) {
-        console.log("Preparing stream urls...", items);
+        // console.log("Preparing stream urls...", items);
         try {
             const promises = items.map(el => this._prepareStreamSource(el));
             await Promise.all(promises);
-            console.log("All streams prepared");
+            // console.log("All streams prepared");
         } catch (error) {
             throw this._error("EPREPARE_STREAMS_SOURCE", error.message);
         }
@@ -119,12 +122,12 @@ class UdemyService {
                         // auto
                         if (!isEncrypted) {
                             const m3u8 = new M3U8Service(url);
-                            console.log('Before loading playlist');
+                            // console.log('Before loading playlist');
                             const playlist = await m3u8.loadPlaylist();
-                            console.log('After loading playlist', playlist);
+                            // console.log('After loading playlist', playlist);
 
                             for (const item of playlist) {
-                                console.log(`for of playlist ${title}`, item);
+                                // console.log(`for of playlist ${title}`, item);
                                 const numericQuality = item.quality;
 
                                 if (numericQuality < minQuality) {
@@ -157,7 +160,7 @@ class UdemyService {
             });
 
             await Promise.all(promises);
-            console.log(`All stream urls converted for assetName: ${title}`);
+            // console.log(`All stream urls converted for assetName: ${title}`);
 
             return {
                 minQuality: minQuality === Number.MAX_SAFE_INTEGER ? "auto" : minQuality.toString(),
@@ -176,11 +179,11 @@ class UdemyService {
         // Verifique o cache antes de fazer a requisição
         const cachedData = this.#cache.get(url);
         if (cachedData) {
-            console.log(`Cache hit: ${url}`);
+            // console.log(`Cache hit: ${url}`);
             return cachedData;
         }
 
-        console.log(`Fetching URL: ${url}`);
+        // console.log(`Fetching URL: ${url}`);
         try {
             const response = await axios({
                 url,
@@ -202,11 +205,11 @@ class UdemyService {
         // Verifique o cache antes de fazer a requisição
         const cachedData = this.#cache.get(url);
         if (cachedData) {
-            console.log(`Cache hit: ${url}`);
+            // console.log(`Cache hit: ${url}`);
             return cachedData;
         }
 
-        console.log(`Fetching URL: ${url}`);
+        // console.log(`Fetching URL: ${url}`);
         try {
             const response = await axios({
                 url,
