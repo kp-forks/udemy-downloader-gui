@@ -689,18 +689,21 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
             else {
                 const lecture = { type, name: item.title, src: "", quality: Settings.download.videoQuality, isEncrypted: false };
                 const { asset, supplementary_assets } = item;
+                const assetType = asset.asset_type.toLowerCase();
 
-                if (asset.asset_type.toLowerCase() == "article") {
+                if (assetType == "article") {
                     lecture.type = "article";
                     lecture.quality = asset.asset_type;
                     lecture.src = asset.data?.body ?? asset.body;
-
-                } else if (asset.asset_type.toLowerCase() == "file" || asset.asset_type.toLowerCase() == "e-book") {
+                } else if (assetType == "file" || assetType == "e-book") {
                     lecture.type = "file";
                     lecture.quality = asset.asset_type;
                     lecture.src = asset.download_urls[asset.asset_type][0].file;
-
-                } else {
+                } else if (assetType == "presentation") {
+                    lecture.type = "file";
+                    lecture.quality = asset.asset_type;
+                    lecture.src = asset.url_set[asset.asset_type][0].file;
+                } else if(assetType.startsWith("video")) {
                     const streams = asset.streams;
                     switch (lecture.quality.toLowerCase()) {
                         case "auto":
@@ -729,6 +732,8 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
                         lecture.isEncrypted = true;
                         courseData.encryptedVideos++;
                     }
+                } else {
+                    appendLog("Unknown Asset Type ", `type: ${assetType}`, `Course: ${courseId}|${courseName}`);
                 }
 
                 if (!Settings.download.skipSubtitles && asset.captions.length > 0) {
@@ -1075,6 +1080,7 @@ function startDownload($course, courseData, subTitle = "") {
         1080: "green",
         Highest: "green",
         auto: "red",
+        Auto: "red",
         Attachment: "pink",
         Subtitle: "black",
     };
@@ -1271,8 +1277,7 @@ function startDownload($course, courseData, subTitle = "") {
                 });
 
                 dl.on("start", function () {
-                    // let file = dl.filePath.split("/").slice(-2).join("/");
-                    // console.log("dl.on(start)", file);
+                    // console.log("dl.on(start)", dl.filePath.split("/").slice(-2).join("/"));
                     $pauseButton.removeClass("disabled");
                 });
 
@@ -1454,7 +1459,7 @@ function startDownload($course, courseData, subTitle = "") {
             // read url as string or ArrayBuffer
             async function getFile(url, binary) {
                 let retry = 0;
-
+                // console.log("getFile", { url, binary });
                 // on error retry 3 times
                 while (retry < 3) {
                     try {
@@ -1465,7 +1470,7 @@ function startDownload($course, courseData, subTitle = "") {
                             if (binary) return await response.arrayBuffer();
 
                             return await response.text();
-                        } else console.log("getFile_Buffer", response.statusText);
+                        } else console.warn("getFile_Buffer", response.statusText);
                     } catch (error) {
                         appendLog("getFile_Error", error);
                     }
