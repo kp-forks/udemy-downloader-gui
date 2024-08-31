@@ -117,7 +117,7 @@ const utils = {
         const BYTES_PER_KB = 1024;
         const UNITS = ["B/s", "KB/s", "MB/s", "GB/s"];
 
-        let speed = Math.floor(bytes);
+        let speed = bytes;
         let unitIndex = 0;
 
         if (speed >= BYTES_PER_KB) {
