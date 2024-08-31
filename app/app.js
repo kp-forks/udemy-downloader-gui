@@ -1597,30 +1597,53 @@ function startDownload($course, courseData, subTitle = "") {
 
                     getPlaylist(lectureData.src).then(async (list) => {
                         if (list.length > 0) {
-                            const result = [list.length];
+                            try {
+                                $progressIndividual.progress("reset");
 
-                            let count = 0;
-                            $progressIndividual.progress("reset");
+                                // Define o tamanho do bloco de dados a ser processado por vez
+                                const CHUNK_SIZE = 100;
+                                let count = 0;
 
-                            for (const url of list) {
-                                const startTime = performance.now();
-                                const response = await getFile(url, true);
-                                const endTime = performance.now();
-                                const timeDiff = (endTime - startTime) / 1000.0;
-                                const chunkSize = Math.floor(response.byteLength / 1024) || 1;
+                                for (let i = 0; i < list.length; i += CHUNK_SIZE) {
+                                    const chunk = list.slice(i, i + CHUNK_SIZE);
+                                    const result = [];
 
-                                const speedAndUnit = utils.getDownloadSpeed(chunkSize / timeDiff);
-                                $downloadSpeedValue.html(speedAndUnit.value);
-                                $downloadSpeedUnit.html(speedAndUnit.unit);
-                                result[count] = response;
-                                count++;
-                                $progressIndividual.progress("set percent", parseInt((count / list.length) * 100));
+                                    for (const url of chunk) {
+                                        const startTime = performance.now();
+                                        const response = await getFile(url, true);
+                                        const endTime = performance.now();
+                                        const timeDiff = (endTime - startTime) / 1000.0;
+
+                                        if (response) {
+                                            const chunkSize = response.byteLength;
+                                            const speedAndUnit = utils.getDownloadSpeed(chunkSize / timeDiff);
+
+                                            $downloadSpeedValue.html(speedAndUnit.value);
+                                            $downloadSpeedUnit.html(speedAndUnit.unit);
+
+                                            result.push(response);
+                                            count++;
+                                        } else {
+                                            console.error('Received an invalid or null response for URL:', url);
+                                            throw new Error('Invalid or null response received');
+                                        }
+
+                                        $progressIndividual.progress("set percent", parseInt((count / list.length) * 100));
+                                    }
+
+                                    const blob = new Blob(result, { type: "application/octet-binary" });
+                                    try {
+                                        const data = Buffer.from(await blob.arrayBuffer());
+                                        fs.appendFileSync(seqName.fullPath, data); // Use append para adicionar os dados ao arquivo existente
+                                    } catch (bufferError) {
+                                        console.error('Error creating buffer from Blob:', bufferError);
+                                        throw bufferError;
+                                    }
+                                }
+                            } catch (error) {
+                                console.error('Error downloading buffer from Blob:', error);
+                                throw error;
                             }
-
-                            const blob = new Blob(result, { type: "application/octet-binary" });
-                            const data = Buffer.from(await blob.arrayBuffer());
-                            fs.writeFileSync(seqName.fullPath, data);
-                            // fs.renameSync(seqName.fullPath + ".mtd", seqName.fullPath);
                         }
 
                         endDownloadAttachment();
