@@ -1,5 +1,23 @@
 # Change Log
 
+## Version [1.13.2](https://github.com/heliomarpm/udemy-downloader-gui/compare/v1.13.1...v1.13.2)
+##### Aug, 31 2024
+![](https://img.shields.io/github/downloads/heliomarpm/udemy-downloader-gui/v1.13.2/total)
+
+
+### Issues Fixed
+  * Download preparer for new AssetType
+	  - [#198](https://github.com/heliomarpm/udemy-downloader-gui/issues/198)
+    - [#201](https://github.com/heliomarpm/udemy-downloader-gui/issues/201)
+    - [#206](https://github.com/heliomarpm/udemy-downloader-gui/issues/206)
+    - [#208](https://github.com/heliomarpm/udemy-downloader-gui/issues/208)
+    - [#212](https://github.com/heliomarpm/udemy-downloader-gui/issues/212)
+
+  * Server Unavailable - improved error messages 
+    - [#200](https://github.com/heliomarpm/udemy-downloader-gui/issues/200)
+    - [#204](https://github.com/heliomarpm/udemy-downloader-gui/issues/204)
+  
+
 ## Version [1.13.1](https://github.com/heliomarpm/udemy-downloader-gui/compare/v1.13.0...v1.13.1)
 ##### Aug, 08 2024
 ![](https://img.shields.io/github/downloads/heliomarpm/udemy-downloader-gui/v1.13.1/total)
