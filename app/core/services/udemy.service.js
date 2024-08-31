@@ -39,7 +39,7 @@ class UdemyService {
         return error;
     }
 
-    async _prepareStreamSource(el) {
+    async _prepareStreamSource(courseId, el) {
         try {
             if (el._class === "lecture") {
                 const assetType = el.asset?.asset_type.toLowerCase();
@@ -55,6 +55,10 @@ class UdemyService {
                         delete el.asset.media_sources;
                         el.asset.streams = streams;
                     }
+                } else if (assetType === "presentation") {
+                    const lecture = await this.fetchLecture(courseId, el.id, true, true);
+                    el.asset = lecture.asset;
+                    el.supplementary_assets = lecture.supplementary_assets;
                 }
             }
         } catch (error) {
@@ -62,10 +66,10 @@ class UdemyService {
         }
     }
 
-    async _prepareStreamsSource(items) {
+    async _prepareStreamsSource(courseId, items) {
         // console.log("Preparing stream urls...", items);
         try {
-            const promises = items.map(el => this._prepareStreamSource(el));
+            const promises = items.map(el => this._prepareStreamSource(courseId, el));
             await Promise.all(promises);
             // console.log("All streams prepared");
         } catch (error) {
@@ -272,10 +276,11 @@ class UdemyService {
      * @param {boolean} getAttachments - Whether to get supplementary assets. Defaults to false.
      * @return {Promise<any>} - The lecture data.
      */
-    async fetchLecture(courseId, lectureId, getAttachments, httpTimeout = this.#timeout) {
-        const url = `/users/me/subscribed-courses/${courseId}/lectures/${lectureId}?fields[lecture]=title,asset${getAttachments ? ",supplementary_assets" : ""}`
+    async fetchLecture(courseId, lectureId, getAttachments, allAssets = false, httpTimeout = this.#timeout) {
+        let url = `/users/me/subscribed-courses/${courseId}/lectures/${lectureId}?fields[lecture]=id,title,asset${getAttachments ? ",supplementary_assets" : ""}`
+        url += allAssets ? "&fields[asset]=@all" : this.#ASSETS_FIELDS;
 
-        const lectureData = await this.#fetchUrl(`${url}${this.#ASSETS_FIELDS}`, "GET", httpTimeout);
+        const lectureData = await this.#fetchUrl(`${url}`, "GET", httpTimeout);
         // console.log("fetchLecture", lectureData);
         // await this._prepareStreamSource(lectureData);
 
@@ -304,7 +309,21 @@ class UdemyService {
         if (contentType === "attachments") url += ",supplementary_assets";
         if (contentType !== "less") url += this.#ASSETS_FIELDS;
 
-        const contentData = await this.#fetchUrl(url);
+        let contentData = null;
+        let loadContent = false;
+
+        try {
+            contentData = await this.#fetchUrl(url);
+        }
+        catch (error) {
+            if (error?.response?.status === 503) {
+                contentData = await this.fetchCourse(courseId, httpTimeout);
+                loadContent = contentType !== "less";
+            } else {
+                throw error;
+            }
+        }
+
         if (!contentData || contentData.count == 0) {
             return null;
         }
@@ -318,8 +337,20 @@ class UdemyService {
             contentData.count++;
         }
 
-        await this._prepareStreamsSource(contentData.results);
+        if (loadContent) {
+            const promises = contentData.results.map(async (el) => {
+                if (el._class === "lecture") {
+                    const lecture = await this.fetchLecture(courseId, el.id, true, false, httpTimeout);
+                    el.asset = lecture.asset;
+                    el.supplementary_assets = lecture.supplementary_assets;
+                }
+                return el;
+            });
+            await Promise.all(promises);
+        }
 
+        await this._prepareStreamsSource(courseId, contentData.results);
+        // console.log("fetchCourseContent", contentData);
         return contentData;
     }
 
