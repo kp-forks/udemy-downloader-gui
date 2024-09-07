@@ -49,8 +49,8 @@
 </p>
 
 <div align="center">
-
-  A cross-platform app to download your purchased courses (paid or free) from Udemy, the code is provided as-is and I am not held resposible for any legal issues resulting from the use of this program.<br>
+	
+  A cross-platform app to download your purchased courses (paid or free) from Udemy, the code is provided as-is and I am not held resposible for any legal issues resulting from the use of this program.<br>  
   Project originally by [@FaisalUmair](https://github.com/FaisalUmair/udemy-downloader-gui) is archived.<br>
   
   ![](https://i.imgur.com/nsaAgDU.gif)
@@ -60,30 +60,20 @@
     <td><img src="https://user-images.githubusercontent.com/13087389/126054264-48caf1f5-472f-44b0-991a-145c9169a2c3.png" width="240px"/></td>
     <td><img src="https://user-images.githubusercontent.com/13087389/126054265-4a343a67-803a-4400-b196-090864fbc1eb.png" width="240px"/></td>
     <td><img src="https://user-images.githubusercontent.com/13087389/126076966-57f318ae-c9ee-4948-862f-87fae4502290.png" width="240px"/></td>
-
   </tr>
   </table>  
 </div>
 
 
-## Warning
-
-
-* This software is intended to help you download Udemy courses for personal use only. 
-
-* Udeler downloads the lecture videos by simply using the source of the video player returned to the user by Udemy after proper authentication, you can also do the same manually. 
-
-* Sharing the content of your subscribed courses is strictly prohibited under Udemy Terms of Use.  
-
-* Each and every Udemy course is subject to copyright infringement. Downloading courses is against Udemy's Terms of Service, I am NOT responsible for your account being suspended as a result of using this program!
-
-* This software does not magically download any paid course available on Udemy, you need to provide your Udemy login credentials to download the courses you have enrolled in. 
- 
-* Many download managers use same method to download videos on a web page. This app only automates the process of a user doing this manually in a web browser.
-
-* Udemy has started to encrypt many of their course videos, please do not open an issue if some/all videos are skipped. Breaking DRM encryption implies piracy, so it will not be included in this application.
-
-* This program is WIP, the code is provided as-is and I am not held resposible for any legal issues resulting from the use of this program.
+> [!WARNING]
+> * This software is intended to help you download Udemy courses for personal use only. 
+> * Udeler downloads the lecture videos by simply using the source of the video player returned to the user by Udemy after proper authentication, you can also do the same manually. 
+> * Sharing the content of your subscribed courses is strictly prohibited under Udemy Terms of Use.  
+> * Each and every Udemy course is subject to copyright infringement. Downloading courses is against Udemy's Terms of Service, I am NOT responsible for your account being suspended as a result of using this program!
+> * This software does not magically download any paid course available on Udemy, you need to provide your Udemy login credentials to download the courses you have enrolled in. 
+> * Many download managers use same method to download videos on a web page. This app only automates the process of a user doing this manually in a web browser.
+> * Udemy has started to encrypt many of their course videos, please do not open an issue if some/all videos are skipped. Breaking DRM encryption implies piracy, so it will not be included in this application.
+> * This program is WIP, the code is provided as-is and I am not held resposible for any legal issues resulting from the use of this program.
 
 
 ## To Use
@@ -111,20 +101,23 @@ npm start
 npm run dev
 ```
 
-> **Note**: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
+> [!NOTE]
+> If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
 
 
-# Releasing
-> **Note**: to be able to perform `auto-updates` you will need a `code signed app`, for this purpose you will need to configure it by yourself, so check the [electron-builder](https://www.electron.build/code-signing) and [action-electron-builder](https://github.com/samuelmeuli/action-electron-builder#code-signing) docs please to get know how to do this.
+## Releasing
+
+> [!CAUTION]
+> To be able to perform `auto-updates` you will need a `code signed app`, for this purpose you will need to configure it by yourself, so check the [electron-builder](https://www.electron.build/code-signing) and [action-electron-builder](https://github.com/samuelmeuli/action-electron-builder#code-signing) docs please to get know how to do this.
 
 To release your app on a GitHub release with `Windows`, `Mac` and `Linux` binaries, you can perform the following commands:
 
 ```bash
 git pull
-npm run make:release
+npm run deploy
 ```
 
-> **Note**: Script for make release is contribution by @daltonmenezes
+###### **Note**: Script for deploy is contribution by @daltonmenezes
 
 ## [![Repography logo](https://images.repography.com/logo.svg)](https://repography.com) / Recent activity [![Time period](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_badge.svg)](https://repography.com)
 [![Timeline graph](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_timeline.svg)](https://github.com/heliomarpm/udemy-downloader-gui/commits)
@@ -133,7 +126,7 @@ npm run make:release
 [![Top contributors](https://images.repography.com/52680464/heliomarpm/udemy-downloader-gui/recent-activity/y07E94GgUZZthzcrKMmW0GjONkUSnFxjetJxoZvwC_A/syRnMFBABLrEXfXXb4Sif2bTt2LuB4UdVpVtIk1uqKg_users.svg)](https://github.com/heliomarpm/udemy-downloader-gui/graphs/contributors)
 
 
-# Contributing:
+## Contributing:
 
 Please make sure to read the [Contributing Guide](https://github.com/heliomarpm/udemy-downloader-gui/blob/master/docs/CONTRIBUTING.md) before making a pull request.
 
