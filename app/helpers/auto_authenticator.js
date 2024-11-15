@@ -1,4 +1,3 @@
-
 // var awaitingLogin = false;
 // const server = require("http").createServer();
 // const socketIO = require("socket.io")(server);
