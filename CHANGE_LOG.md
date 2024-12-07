@@ -1,5 +1,13 @@
 # Change Log
 
+## Version [1.13.4](https://github.com/heliomarpm/udemy-downloader-gui/compare/v1.13.3...v1.13.4)
+##### Dec, 7 2024
+![](https://img.shields.io/github/downloads/heliomarpm/udemy-downloader-gui/v1.13.4/total)
+
+* Bug fixes
+* Package update
+
+
 ## Version [1.13.3](https://github.com/heliomarpm/udemy-downloader-gui/compare/v1.13.2...v1.13.3)
 ##### Nov, 14 2024
 ![](https://img.shields.io/github/downloads/heliomarpm/udemy-downloader-gui/v1.13.3/total)

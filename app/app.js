@@ -705,7 +705,8 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
 						lecture.src = `<script type="text/javascript">window.location = "${courseUrl}/${item._class}/${item.id}";</script>`;
 						appendLog("File not uploaded", `Course: ${courseId}|${courseName}`, `Lecture: ${item.id}|${item.title}`);
 					} else {
-						switch (lecture.quality.toLowerCase()) {
+
+						switch ( (lecture.quality || "").toLowerCase()) {
 							case "auto":
 							case "highest":
 								lecture.quality = streams.maxQuality;
@@ -1695,10 +1696,14 @@ function askForSubtitle(subtitlesAvailable, totalLectures, defaultSubtitle = "",
 	const totals = {};
 	const languageKeys = {};
 
-	if (Object.keys(subtitlesAvailable).length === 0) {
-		callback("");
-		return;
-	}
+    try {
+        if (subtitlesAvailable && Object.keys(subtitlesAvailable).length === 0) {
+            callback("");
+            return;
+        }
+    } catch (error) {
+        return;
+    }
 
 	defaultSubtitle = defaultSubtitle.replace(/\s*\[.*?\]/g, "").trim();
 	for (const key in subtitlesAvailable) {

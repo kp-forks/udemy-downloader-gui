@@ -1,7 +1,7 @@
 {
   "name": "udeler",
   "productName": "Udeler",
-  "version": "1.13.3",
+  "version": "1.13.4",
   "description": "A cross platform (Windows, Mac, Linux) desktop application for downloading Udemy Courses.",
   "main": "main.js",
   "type": "commonjs",
@@ -32,9 +32,9 @@
     "sync:locales": "node ./sync-locales.js"
   },
   "dependencies": {
-    "@sentry/electron": "^4.24.0",
-    "axios": "^1.7.7",
-    "cookie": "^1.0.1",
+    "@sentry/electron": "4.24.0",
+    "axios": "^1.7.9",
+    "cookie": "^1.0.2",
     "dialogs": "^2.0.1",
     "electron-settings": "3.2.0",
     "jquery": "^3.7.1",
@@ -44,10 +44,11 @@
     "sanitize-filename": "^1.6.3"
   },
   "devDependencies": {
-    "electron": "^11.5.0",
+    "electron": "11.5.0",
     "electron-builder": "^25.1.8",
     "electron-reload": "^2.0.0-alpha.1",
-    "gh_deploy": "github:heliomarpm/gh_deploy"
+    "gh_deploy": "github:heliomarpm/gh_deploy",
+    "prettier": "^3.4.2"
   },
   "build": {
     "appId": "com.faisalumair.udeler",
