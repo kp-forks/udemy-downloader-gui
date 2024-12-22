@@ -1,5 +1,13 @@
 # Change Log
 
+## Version [1.14.0](https://github.com/heliomarpm/udemy-downloader-gui/compare/v1.13.4...v1.14.0)
+##### Dec, 21 2024
+![](https://img.shields.io/github/downloads/heliomarpm/udemy-downloader-gui/v1.14.0/total)
+
+### features
+- Single search for courses purchased individually or subscribed to via subscription
+- Download list m3u file
+
 ## Version [1.13.4](https://github.com/heliomarpm/udemy-downloader-gui/compare/v1.13.3...v1.13.4)
 ##### Dec, 7 2024
 ![](https://img.shields.io/github/downloads/heliomarpm/udemy-downloader-gui/v1.13.4/total)

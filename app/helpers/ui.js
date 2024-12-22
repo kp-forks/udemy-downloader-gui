@@ -72,6 +72,8 @@ const ui = {
 	get actionCardTemplate() {
 		return `
             <div class="ui tiny icon action buttons">
+                <button class="ui basic blue save_m3u button"><i class="save outline icon"></i></button>
+                <div style="height: 1px; width: 5px;"></div>
                 <button class="ui basic blue download button"><i class="download icon"></i></button>
                 <button class="ui basic red disabled pause button"><i class="pause icon"></i></button>
                 <button class="ui basic green disabled resume button"><i class="play icon"></i></button>

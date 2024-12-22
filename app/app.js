@@ -117,6 +117,10 @@ $(".ui.dashboard .content").on("click", ".download-success, .course-encrypted", 
 	$(this).parents(".course").find(".download-status").show();
 });
 
+$(".ui.dashboard .content").on("click", ".save_m3u.button", function (e) {
+	e.stopImmediatePropagation();
+	saveM3u($(this).parents(".course"));
+});
 $(".ui.dashboard .content").on("click", ".download.button, .download-error", function (e) {
 	e.stopImmediatePropagation();
 	prepareDownloading($(this).parents(".course"));
@@ -301,7 +305,7 @@ async function checkLogin(alertExpired = true) {
 			ui.busyLogin(false);
 			ui.showDashboard();
 
-			Settings.subscriber = utils.toBoolean(userContext.header.user.enableLabsInPersonalPlan);
+			Settings.subscriber = utils.toBoolean(userContext.header.user.enableLabsInPersonalPlan) || utils.toBoolean(userContext.header.user.consumer_subscription_active);
 			fetchCourses(Settings.subscriber).then(() => {
 				console.log("fetchCourses done");
 			});
@@ -553,9 +557,10 @@ function renderCourses(response, isResearch = false) {
 		$coursesItems.append(courseElements);
 
 		if (response.next) {
+            const dataUrl = Array.isArray(response.next) ? response.next : [response.next];
 			// added loadMore Button
 			$coursesSection.append(
-				`<button class="ui basic blue fluid load-more button disposable" data-url=${response.next}>
+				`<button class="ui basic blue fluid load-more button disposable" data-url=${JSON.stringify(dataUrl)}>
                     ${translate("Load More")}
                 </button>`
 			);
@@ -707,6 +712,7 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
 					} else {
 
 						switch ( (lecture.quality || "").toLowerCase()) {
+                            case "":
 							case "auto":
 							case "highest":
 								lecture.quality = streams.maxQuality;
@@ -715,10 +721,10 @@ async function fetchCourseContent(courseId, courseName, courseUrl) {
 								lecture.quality = streams.minQuality;
 								break;
 							default:
-								lecture.quality = utils.isNumber(lecture.quality) ? lecture.quality : lecture.quality.slice(0, -1);
+                                lecture.quality = utils.isNumber(lecture.quality) ? lecture.quality : lecture.quality.slice(0, -1);
 						}
 
-						if (!streams.sources[lecture.quality]) {
+						if (lecture.quality && !streams.sources[lecture.quality]) {
 							if (utils.isNumber(lecture.quality) && streams.maxQuality != "auto") {
 								const source = utils.getClosestValue(streams.sources, lecture.quality);
 								lecture.quality = source?.key || streams.maxQuality;
@@ -801,18 +807,26 @@ async function fetchCourses(isSubscriber) {
 function loadMore(loadMoreButton) {
 	const $button = $(loadMoreButton);
 	const $courses = $button.prev(".courses.items");
-	const url = $button.data("url");
+	const url = [...$button.data("url")];
 
 	ui.busyLoadCourses(true);
 	udemyService
-		.fetchLoadMore(url)
+		.fetchLoadMore(url[0])
 		.then((resp) => {
 			$courses.append(...resp.results.map((course) => createCourseElement(course, false)));
 			if (!resp.next) {
-				$button.remove();
+                if (url.length > 1) {
+                    $button.data("url", [url[1]]);
+                } else {
+                    $button.remove();
+                }
 			} else {
-				$button.data("url", resp.next);
-			}
+                if (url.length > 1) {
+                    $button.data("url", [resp.next, url[1]]);
+                }else {
+                    $button.data("url", [resp.next]);
+                }
+            }
 		})
 		.catch((e) => {
 			const statusCode = (e.response?.status || 0).toString() + (e.code ? ` :${e.code}` : "");
@@ -964,6 +978,68 @@ function removeCurseDownloads(courseId) {
 			$el.remove();
 		}
 	});
+}
+
+async function saveM3u($course) {
+	ui.prepareDownloading($course);
+
+	const courseId = $course.attr("course-id");
+	const courseName = $course.find(".coursename").text();
+	const courseUrl = `https://${Settings.subDomain}.udemy.com${$course.attr("course-url")}`;
+
+	console.clear();
+
+	let courseData = null;
+	try {
+		courseData = await fetchCourseContent(courseId, courseName, courseUrl);
+		if (!courseData) {
+			// ui.showProgress($course, false);
+			return;
+		}
+
+        console.log(courseData);
+        dialog
+		.showSaveDialog({
+			title: "Save M3U",
+			defaultPath: `${courseName}.m3u`,
+			filters: [{ name: "M3U File (*.m3u)", fileExtension: ["m3u"] }],
+		})
+		.then((result) => {
+			if (!result.canceled) {
+				let filePath = result.filePath;
+				if (!filePath.endsWith(".m3u")) filePath += ".m3u";
+
+				let content = "#EXTM3U";
+                let index = 0;
+				courseData.chapters.forEach((chapter) => {
+                    chapter.lectures.forEach((lecture, lec_index) => {
+                        index++;
+                        content += `\n#EXTINF:-1,${lec_index+1}. ${lecture.name}\n${lecture.src}`;
+
+                        if (lecture.attachments && lecture.attachments.length > 0)
+                          lecture.attachments.forEach((attachment, attach_index) => {
+                            content += `\n#EXTINF:-1,${lec_index+1}.${attach_index+1} ${attachment.name}\n${attachment.src}`;
+                          })
+                    })
+				});
+
+				fs.writeFile(filePath, content, (error) => {
+					if (error) {
+						appendLog("saveM3u_Error", error);
+						return;
+					}
+					console.log("File successfully create!");
+				});
+			}
+		});
+
+	} catch (error) {
+		handleApiError(error, "ESAVE_M3U", null, false);
+		ui.busyOff();
+		$course.find(".prepare-downloading").hide();
+	} finally {
+        ui.showProgress($course, false);
+    }
 }
 
 async function prepareDownloading($course, subtitle) {

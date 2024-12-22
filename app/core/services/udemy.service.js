@@ -247,7 +247,26 @@ class UdemyService {
 		pageSize = Math.max(pageSize, 10);
 
 		const param = `page=1&ordering=title&fields[user]=job_title&page_size=${pageSize}&search=${keyword}`;
-		const url = !isSubscriber ? `${this.#URL_COURSES}?${param}` : `${this.#URL_COURSES_ENROLL}?${param}`;
+		// const url = !isSubscriber ? `${this.#URL_COURSES}?${param}` : `${this.#URL_COURSES_ENROLL}?${param}`;
+        const url = `${this.#URL_COURSES}?${param}`;
+        const urlEnroll = `${this.#URL_COURSES_ENROLL}?${param}`;
+
+        if (isSubscriber) {
+            const [courses, enrolledCourses] = await Promise.all([
+                this.#fetchEndpoint(url, "GET", httpTimeout),
+                this.#fetchEndpoint(urlEnroll, "GET", httpTimeout)
+            ]);
+
+            const next = [courses.next, enrolledCourses.next].filter((n) => n !== null);
+            const previous = [courses.previous, enrolledCourses.previous].filter((p) => p !== null);
+
+            return {
+                count: courses.count + enrolledCourses.count,
+                next: next.length > 0 ? next : null,
+                previous: previous.length > 0 ? previous : null,
+                results: [...courses.results, ...enrolledCourses.results]
+            }
+        }
 
 		return await this.#fetchEndpoint(url, "GET", httpTimeout);
 	}
@@ -256,7 +275,26 @@ class UdemyService {
 		pageSize = Math.max(pageSize, 10);
 
 		const param = `page_size=${pageSize}&ordering=-last_accessed`;
-		const url = !isSubscriber ? `${this.#URL_COURSES}?${param}` : `${this.#URL_COURSES_ENROLL}?${param}`;
+		// const url = !isSubscriber ? `${this.#URL_COURSES}?${param}` : `${this.#URL_COURSES_ENROLL}?${param}`;
+        const url = `${this.#URL_COURSES}?${param}`;
+        const urlEnroll = `${this.#URL_COURSES_ENROLL}?${param}`;
+
+        if (isSubscriber) {
+            const [courses, enrolledCourses] = await Promise.all([
+                this.#fetchEndpoint(url, "GET", httpTimeout),
+                this.#fetchEndpoint(urlEnroll, "GET", httpTimeout)
+            ]);
+
+            const next = [courses.next, enrolledCourses.next].filter((n) => n !== null);
+            const previous = [courses.previous, enrolledCourses.previous].filter((p) => p !== null);
+
+            return {
+                count: courses.count + enrolledCourses.count,
+                next: next.length > 0 ? next : null,
+                previous: previous.length > 0 ? previous : null,
+                results: [...courses.results, ...enrolledCourses.results]
+            }
+        }
 
 		return await this.#fetchEndpoint(url, "GET", httpTimeout);
 	}
