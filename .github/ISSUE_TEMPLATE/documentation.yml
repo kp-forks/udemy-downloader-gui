@@ -1,12 +1,43 @@
-name: "📚 Documentation Issue"
-description: Report issues in our documentation
-labels: 
-- documentation
-- needs-triage 
+name: "📝 Documentation"
+description: Report an error or area that needs clarification.
+labels:
+  - documentation
+  - needs-triage
 body:
-- type: textarea
-  attributes: 
-    label: Provide a description of requested docs changes
-    placeholder: Briefly describe which document needs to be corrected and why.
-  validations:
-    required: true
+  - type: markdown
+    attributes:
+      value: |
+        If you found an area that needs clarification or an improvement in the documentation, feel free to open a pull request or describe the section/content that could be improved below.
+
+  - type: markdown
+    attributes:
+      value: "⚠️👆 Please read the instructions above before submitting the issue 👆⚠️"
+
+  - type: textarea
+    id: content
+    attributes:
+      label: "Section/Content To Improve"
+      description: Quote the section or provide a link to the part of the documentation that needs improvement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "Suggested Improvement"
+      description: Describe what is confusing, outdated, or incorrect, and suggest what could make it better.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: "Relevant File(s)"
+      description: List relevant files if known (e.g., README.md, CONTRIBUTING.md).
+      placeholder: |
+        e.g.
+        README.md
+        docs/getting-started.md
+      render: bash
+    validations:
+      required: false
