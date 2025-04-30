@@ -133,10 +133,12 @@ Please make sure to read the [Contributing Guide](https://github.com/heliomarpm/
 Thank you to all the people who already contributed to Udeler ❤️!
 
 <a href="https://github.com/heliomarpm/udemy-downloader-gui/graphs/contributors" target="_blank">
-  <img src="https://contrib.rocks/image?repo=heliomarpm/udemy-downloader-gui" />
+  <img src="https://contrib.nn.ci/api?repo=heliomarpm/udemy-downloader-gui&no_bot=true" />
+<!--   <img src="https://contrib.rocks/image?repo=heliomarpm/udemy-downloader-gui" /> -->
 </a>
 
-###### Made with [contrib.rocks](https://contrib.rocks).
+<!-- ###### Made with [contrib.rocks](https://contrib.rocks). -->
+###### Made with [contrib.nn](https://contrib.nn.ci).
 
 That said, there's a bunch of ways you can contribute to this project, like by:
 
